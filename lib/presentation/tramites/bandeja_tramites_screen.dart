@@ -3,6 +3,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../domain/models/tramite_model.dart';
 import '../../domain/repositories/tramite_repository.dart';
 import 'tramite_cubit.dart';
+import 'tramite_detail_screen.dart';
 
 class BandejaTramitesScreen extends StatelessWidget {
   const BandejaTramitesScreen({super.key});
@@ -17,7 +18,7 @@ class BandejaTramitesScreen extends StatelessWidget {
 }
 
 class _BandejaView extends StatefulWidget {
-  const _BandejaView({super.key});
+  const _BandejaView();
 
   @override
   State<_BandejaView> createState() => _BandejaViewState();
@@ -121,7 +122,7 @@ class _TramiteDataSource extends DataTableSource {
     }
 
     return DataRow.byIndex(index: index, cells: [
-      DataCell(Text(t.cut)),
+      DataCell(Text(t.cut), onTap: () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => TramiteDetailScreen(tramite: t)))),
       DataCell(Text(t.asunto)),
       DataCell(Text(t.remitenteNombre)),
       DataCell(Text(t.fechaCreacion)),

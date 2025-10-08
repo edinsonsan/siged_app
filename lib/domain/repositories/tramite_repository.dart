@@ -1,5 +1,6 @@
 import '../../core/services/http_service.dart';
 import '../models/tramite_model.dart';
+import '../models/historial_tramite_model.dart';
 
 class TramiteFilter {
   final int? areaId;
@@ -25,6 +26,30 @@ class TramiteRepository {
   final DioHttpService http;
 
   TramiteRepository(this.http);
+
+  Future<void> derivarTramite(num id, int toAreaId, {int? userId}) async {
+    await http.post('/tramites/\$id/derivar'.replaceAll('\$id', id.toString()), data: {'toAreaId': toAreaId, 'userId': userId});
+  }
+
+  Future<void> finalizeTramite(num id, {int? userId}) async {
+    await http.post('/tramites/\$id/finalize'.replaceAll('\$id', id.toString()), data: {'userId': userId});
+  }
+
+  Future<void> observeTramite(num id, String comment, {int? userId}) async {
+    await http.post('/tramites/\$id/observe'.replaceAll('\$id', id.toString()), data: {'userId': userId, 'comment': comment});
+  }
+
+  Future<List<HistorialTramiteModel>> getHistorial(num tramiteId) async {
+    final res = await http.get('/tramites/\$tramiteId/historial'.replaceAll('\$tramiteId', tramiteId.toString()));
+    final data = res.data;
+    if (data is List) {
+      return data.map((e) => HistorialTramiteModel.fromJson(e as Map<String, dynamic>)).toList();
+    }
+    if (data is Map && data['data'] is List) {
+      return (data['data'] as List).map((e) => HistorialTramiteModel.fromJson(e as Map<String, dynamic>)).toList();
+    }
+    return [];
+  }
 
   /// Fetch tramites with optional filters. Returns a tuple: (list, total)
   Future<Map<String, dynamic>> getTramites({required TramiteFilter filters}) async {
