@@ -40,7 +40,7 @@ class LoginScreen extends StatelessWidget {
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    const Text('Login', style: TextStyle(fontSize: 24)),
+                    const Text('Iniciar Sesión', style: TextStyle(fontSize: 24)),
                     const SizedBox(height: 12),
                     Form(
                       key: formKey,
@@ -84,7 +84,7 @@ class LoginScreen extends StatelessWidget {
                                         context.read<AuthCubit>().login(email, password);
                                       }
                                     },
-                                    child: const Text('Login'),
+                                    child: const Text('Ingresar'),
                                   ),
                                 ),
                               ],
