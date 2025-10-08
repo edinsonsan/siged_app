@@ -9,6 +9,7 @@ import 'core/services/http_service.dart';
 // ...existing imports
 import 'domain/repositories/auth_repository.dart';
 import 'domain/repositories/dashboard_repository.dart';
+import 'domain/repositories/tramite_repository.dart';
 import 'presentation/auth/auth_cubit.dart';
 import 'presentation/auth/login_screen.dart';
 import 'presentation/home/home_screen.dart';
@@ -25,21 +26,23 @@ Future<void> main() async {
   final httpService = DioHttpService(dio);
   final authRepository = AuthRepository(httpService);
   final dashboardRepository = DashboardRepository(httpService);
+  final tramiteRepository = TramiteRepository(httpService);
 
   runApp(
-    RepositoryProvider.value(
-      value: authRepository,
-      child: RepositoryProvider.value(
-        value: dashboardRepository,
-        child: BlocProvider(
-          create: (_) {
-            final cubit = AuthCubit(authRepository);
-            // Immediately check auth status
-            cubit.checkAuthStatus();
-            return cubit;
-          },
-          child: const MainApp(),
-        ),
+    MultiRepositoryProvider(
+      providers: [
+        RepositoryProvider.value(value: authRepository),
+        RepositoryProvider.value(value: dashboardRepository),
+        RepositoryProvider.value(value: tramiteRepository),
+      ],
+      child: BlocProvider(
+        create: (_) {
+          final cubit = AuthCubit(authRepository);
+          // Immediately check auth status
+          cubit.checkAuthStatus();
+          return cubit;
+        },
+        child: const MainApp(),
       ),
     ),
   );
