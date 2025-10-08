@@ -74,7 +74,7 @@ class MainApp extends StatelessWidget {
 
         if (authState is AuthAuthenticated) {
           // If authenticated, prevent going to login
-          if (goingToLogin) return '/home';
+          if (goingToLogin) return '/home/dashboard';
           // allow navigation
           return null;
         }
@@ -94,7 +94,18 @@ class MainApp extends StatelessWidget {
           },
         ),
         GoRoute(path: '/login', builder: (context, state) => const LoginScreen()),
-        GoRoute(path: '/home', builder: (context, state) => const HomeScreen()),
+        ShellRoute(
+          builder: (context, state, child) => HomeScreen(child: child),
+          routes: [
+            GoRoute(
+              path: '/home',
+              redirect: (context, state) => '/home/dashboard',
+            ),
+            GoRoute(path: '/home/dashboard', builder: (context, state) => const Center(child: Text('Dashboard'))),
+            GoRoute(path: '/home/bandeja', builder: (context, state) => const Center(child: Text('Bandeja de Trámites'))),
+            GoRoute(path: '/home/users', builder: (context, state) => const Center(child: Text('Administración de Usuarios'))),
+          ],
+        ),
       ],
     );
 
