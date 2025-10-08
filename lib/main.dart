@@ -8,9 +8,13 @@ import 'core/config/environment.dart';
 import 'core/services/http_service.dart';
 // ...existing imports
 import 'domain/repositories/auth_repository.dart';
+import 'domain/repositories/dashboard_repository.dart';
 import 'presentation/auth/auth_cubit.dart';
 import 'presentation/auth/login_screen.dart';
 import 'presentation/home/home_screen.dart';
+import 'presentation/tramites/dashboard_screen.dart';
+import 'presentation/tramites/bandeja_tramites_screen.dart';
+import 'presentation/admin/admin_users_screen.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -20,18 +24,22 @@ Future<void> main() async {
   final dio = Dio();
   final httpService = DioHttpService(dio);
   final authRepository = AuthRepository(httpService);
+  final dashboardRepository = DashboardRepository(httpService);
 
   runApp(
     RepositoryProvider.value(
       value: authRepository,
-      child: BlocProvider(
-        create: (_) {
-          final cubit = AuthCubit(authRepository);
-          // Immediately check auth status
-          cubit.checkAuthStatus();
-          return cubit;
-        },
-        child: const MainApp(),
+      child: RepositoryProvider.value(
+        value: dashboardRepository,
+        child: BlocProvider(
+          create: (_) {
+            final cubit = AuthCubit(authRepository);
+            // Immediately check auth status
+            cubit.checkAuthStatus();
+            return cubit;
+          },
+          child: const MainApp(),
+        ),
       ),
     ),
   );
@@ -101,9 +109,9 @@ class MainApp extends StatelessWidget {
               path: '/home',
               redirect: (context, state) => '/home/dashboard',
             ),
-            GoRoute(path: '/home/dashboard', builder: (context, state) => const Center(child: Text('Dashboard'))),
-            GoRoute(path: '/home/bandeja', builder: (context, state) => const Center(child: Text('Bandeja de Trámites'))),
-            GoRoute(path: '/home/users', builder: (context, state) => const Center(child: Text('Administración de Usuarios'))),
+            GoRoute(path: '/home/dashboard', builder: (context, state) => const DashboardScreen()),
+            GoRoute(path: '/home/bandeja', builder: (context, state) => const BandejaTramitesScreen()),
+            GoRoute(path: '/home/users', builder: (context, state) => const AdminUsersScreen()),
           ],
         ),
       ],

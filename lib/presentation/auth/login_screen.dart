@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:go_router/go_router.dart';
 import 'auth_cubit.dart';
-import '../home/home_screen.dart';
+// import '../home/home_screen.dart';
 
 class LoginScreen extends StatelessWidget {
   const LoginScreen({super.key});
@@ -34,7 +35,7 @@ class LoginScreen extends StatelessWidget {
                   }
 
                   if (state is AuthAuthenticated) {
-                    Navigator.of(context).pushReplacement(MaterialPageRoute(builder: (_) => const HomeScreen()));
+                    context.go('/home');
                   }
                 },
                 child: Column(
