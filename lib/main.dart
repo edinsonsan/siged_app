@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
+import 'core/config/environment.dart';
 
-void main() {
+Future<void> main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  await Environment.initEnvironment();
   runApp(const MainApp());
 }
 
