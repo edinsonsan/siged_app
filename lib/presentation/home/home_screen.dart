@@ -13,7 +13,7 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen> {
-  static const _paths = ['/home/dashboard', '/home/bandeja', '/home/users'];
+  static const _paths = ['/home/dashboard', '/home/bandeja', '/home/admin/users', '/home/admin/areas'];
 
   @override
   Widget build(BuildContext context) {
@@ -84,6 +84,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   const NavigationRailDestination(icon: Icon(Icons.dashboard), label: Text('Dashboard')),
                   const NavigationRailDestination(icon: Icon(Icons.inbox), label: Text('Bandeja')),
                   if (isAdmin) const NavigationRailDestination(icon: Icon(Icons.group), label: Text('Usuarios')),
+                  if (isAdmin) const NavigationRailDestination(icon: Icon(Icons.business), label: Text('Áreas')),
                 ],
               ),
             Expanded(
@@ -96,12 +97,18 @@ class _HomeScreenState extends State<HomeScreen> {
                         scrollDirection: Axis.horizontal,
                         children: [
                           for (var i = 0; i < _paths.length; i++)
-                            if (i != 2 || isAdmin)
+                            if ((i < 2) || isAdmin)
                               Padding(
                                 padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 8.0),
                                 child: ElevatedButton(
                                   onPressed: () => GoRouter.of(context).go(_paths[i]),
-                                  child: Text(i == 0 ? 'Dashboard' : i == 1 ? 'Bandeja' : 'Usuarios'),
+                                  child: Text(i == 0
+                                      ? 'Dashboard'
+                                      : i == 1
+                                          ? 'Bandeja'
+                                          : i == 2
+                                              ? 'Usuarios'
+                                              : 'Áreas'),
                                 ),
                               ),
                         ],

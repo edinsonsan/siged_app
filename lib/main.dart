@@ -10,6 +10,9 @@ import 'core/services/http_service.dart';
 import 'domain/repositories/auth_repository.dart';
 import 'domain/repositories/dashboard_repository.dart';
 import 'domain/repositories/tramite_repository.dart';
+import 'domain/repositories/admin_repository.dart';
+import 'presentation/admin/user_management_screen.dart';
+import 'presentation/admin/area_management_screen.dart';
 import 'presentation/auth/auth_cubit.dart';
 import 'presentation/auth/login_screen.dart';
 import 'presentation/home/home_screen.dart';
@@ -27,6 +30,7 @@ Future<void> main() async {
   final authRepository = AuthRepository(httpService);
   final dashboardRepository = DashboardRepository(httpService);
   final tramiteRepository = TramiteRepository(httpService);
+  final adminRepository = AdminRepository(httpService);
 
   runApp(
     MultiRepositoryProvider(
@@ -34,6 +38,7 @@ Future<void> main() async {
         RepositoryProvider.value(value: authRepository),
         RepositoryProvider.value(value: dashboardRepository),
         RepositoryProvider.value(value: tramiteRepository),
+        RepositoryProvider.value(value: adminRepository),
       ],
       child: BlocProvider(
         create: (_) {
@@ -115,6 +120,8 @@ class MainApp extends StatelessWidget {
             GoRoute(path: '/home/dashboard', builder: (context, state) => const DashboardScreen()),
             GoRoute(path: '/home/bandeja', builder: (context, state) => const BandejaTramitesScreen()),
             GoRoute(path: '/home/users', builder: (context, state) => const AdminUsersScreen()),
+            GoRoute(path: '/home/admin/users', builder: (context, state) => const UserManagementScreen()),
+            GoRoute(path: '/home/admin/areas', builder: (context, state) => const AreaManagementScreen()),
           ],
         ),
       ],
