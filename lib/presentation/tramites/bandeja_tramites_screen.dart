@@ -3,8 +3,8 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../domain/models/tramite_model.dart';
 import '../../domain/repositories/tramite_repository.dart';
 import 'tramite_cubit.dart';
-import 'tramite_detail_screen.dart';
 import 'tramite_register_screen.dart';
+import 'package:go_router/go_router.dart';
 
 class BandejaTramitesScreen extends StatelessWidget {
   const BandejaTramitesScreen({super.key});
@@ -29,6 +29,7 @@ class _BandejaViewState extends State<_BandejaView> {
   final _searchController = TextEditingController();
   String? _selectedEstado;
   int _rowsPerPage = PaginatedDataTable.defaultRowsPerPage;
+  bool _showAll = false;
 
   @override
   Widget build(BuildContext context) {
@@ -59,6 +60,14 @@ class _BandejaViewState extends State<_BandejaView> {
                   context.read<TramiteCubit>().applyEstado(v);
                 },
               ),
+              const SizedBox(width: 12),
+              Row(children: [
+                Checkbox(value: _showAll, onChanged: (v) {
+                  setState(() => _showAll = v ?? false);
+                  context.read<TramiteCubit>().setShowAll(_showAll);
+                }),
+                const Text('Mostrar todos')
+              ])
             ],
           ),
         ),
@@ -125,7 +134,7 @@ class _TramiteDataSource extends DataTableSource {
     }
 
     return DataRow.byIndex(index: index, cells: [
-      DataCell(Text(t.cut), onTap: () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => TramiteDetailScreen(tramite: t)))),
+      DataCell(Text(t.cut), onTap: () => GoRouter.of(context).go('/home/bandeja/\${t.id}')),
       DataCell(Text(t.asunto)),
       DataCell(Text(t.remitenteNombre)),
       DataCell(Text(t.fechaCreacion)),

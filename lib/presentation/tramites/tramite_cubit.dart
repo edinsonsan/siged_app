@@ -8,6 +8,7 @@ part 'tramite_state.dart';
 class TramiteCubit extends Cubit<TramiteState> {
   final TramiteRepository repository;
   TramiteFilter currentFilter = TramiteFilter(limit: 10, offset: 0);
+  bool showAll = false;
 
   TramiteCubit(this.repository) : super(const TramiteLoading()) {
     fetchPage();
@@ -17,13 +18,22 @@ class TramiteCubit extends Cubit<TramiteState> {
     emit(const TramiteLoading());
     if (filter != null) currentFilter = filter;
     try {
-      final res = await repository.getTramites(filters: currentFilter);
+      // Respect showAll: if showAll is true, send a filter without areaId
+      final effectiveFilter = showAll ? TramiteFilter(limit: currentFilter.limit, offset: currentFilter.offset, estado: currentFilter.estado, cut: currentFilter.cut) : currentFilter;
+      final res = await repository.getTramites(filters: effectiveFilter);
       final list = (res['list'] as List<TramiteModel>?) ?? [];
       final total = (res['total'] as int?) ?? list.length;
       emit(TramiteLoaded(list: list, total: total, filter: currentFilter));
     } catch (e) {
       emit(TramiteError(e.toString()));
     }
+  }
+
+  void setShowAll(bool value) {
+    showAll = value;
+    // when toggling, refresh the list and reset pagination
+    currentFilter = TramiteFilter(limit: currentFilter.limit, offset: 0, estado: currentFilter.estado, cut: currentFilter.cut, areaId: showAll ? null : currentFilter.areaId);
+    fetchPage();
   }
 
   Future<void> changePage(int limit, int offset) async {

@@ -18,6 +18,7 @@ import 'presentation/auth/login_screen.dart';
 import 'presentation/home/home_screen.dart';
 import 'presentation/tramites/dashboard_screen.dart';
 import 'presentation/tramites/bandeja_tramites_screen.dart';
+import 'presentation/tramites/tramite_detail_screen.dart';
 import 'presentation/admin/admin_users_screen.dart';
 
 Future<void> main() async {
@@ -119,6 +120,29 @@ class MainApp extends StatelessWidget {
             ),
             GoRoute(path: '/home/dashboard', builder: (context, state) => const DashboardScreen()),
             GoRoute(path: '/home/bandeja', builder: (context, state) => const BandejaTramitesScreen()),
+            GoRoute(
+              path: '/home/bandeja/:id',
+              builder: (context, state) {
+                // Extract id from multiple possible properties depending on go_router version
+                String? idStr;
+                try {
+                  idStr = (state as dynamic).params?['id'] as String?;
+                } catch (_) {
+                  try {
+                    idStr = (state as dynamic).pathParameters?['id'] as String?;
+                  } catch (_) {
+                    try {
+                      final map = (state as dynamic).params as Map<String, dynamic>?;
+                      idStr = map?['id']?.toString();
+                    } catch (_) {
+                      idStr = null;
+                    }
+                  }
+                }
+                final id = int.tryParse(idStr ?? '');
+                return TramiteDetailScreen.fromId(id: id);
+              },
+            ),
             GoRoute(path: '/home/users', builder: (context, state) => const AdminUsersScreen()),
             GoRoute(path: '/home/admin/users', builder: (context, state) => const UserManagementScreen()),
             GoRoute(path: '/home/admin/areas', builder: (context, state) => const AreaManagementScreen()),

@@ -6,13 +6,59 @@ import '../../domain/models/tramite_model.dart';
 import '../../domain/repositories/tramite_repository.dart';
 import 'detail_tramite_cubit.dart';
 
-class TramiteDetailScreen extends StatelessWidget {
-  final TramiteModel tramite;
+class TramiteDetailScreen extends StatefulWidget {
+  final TramiteModel? tramite;
+  final int? id;
 
-  const TramiteDetailScreen({super.key, required this.tramite});
+  const TramiteDetailScreen({super.key, this.tramite, this.id});
+
+  /// Helper to construct from route id
+  factory TramiteDetailScreen.fromId({int? id}) => TramiteDetailScreen(id: id);
+
+  @override
+  State<TramiteDetailScreen> createState() => _TramiteDetailScreenState();
+}
+
+class _TramiteDetailScreenState extends State<TramiteDetailScreen> {
+  TramiteModel? _tramite;
+  bool _loading = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _tramite = widget.tramite;
+    if (_tramite != null) {
+      _loading = false;
+    } else if (widget.id != null) {
+      _fetchById(widget.id!);
+    } else {
+      _loading = false;
+    }
+  }
+
+  Future<void> _fetchById(int id) async {
+    try {
+      final repo = context.read<TramiteRepository>();
+      final t = await repo.getTramiteById(id);
+      if (!mounted) return;
+      setState(() {
+        _tramite = t;
+        _loading = false;
+      });
+    } catch (e) {
+      if (!mounted) return;
+      setState(() => _loading = false);
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Error al cargar trámite: ${e.toString()}')));
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
+    if (_loading) return const Scaffold(body: Center(child: CircularProgressIndicator()));
+    if (_tramite == null) return const Scaffold(body: Center(child: Text('Trámite no encontrado')));
+
+    final tramite = _tramite!;
+
     return BlocProvider(
       create: (context) => DetailTramiteCubit(context.read<TramiteRepository>())..loadTramite(tramite),
       child: Scaffold(

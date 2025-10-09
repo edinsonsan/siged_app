@@ -75,6 +75,15 @@ class TramiteRepository {
     return {'list': list, 'total': total};
   }
 
+  /// Get a single tramite by id
+  Future<TramiteModel> getTramiteById(num id) async {
+    final res = await http.get('/tramites/\$id'.replaceAll('\$id', id.toString()));
+    final data = res.data;
+    if (data is Map<String, dynamic>) return TramiteModel.fromJson(data);
+    if (data is Map && data['data'] is Map<String, dynamic>) return TramiteModel.fromJson(data['data']);
+    throw Exception('Invalid tramite response');
+  }
+
   /// Register a new tramite. Returns the created tramite object (if API returns it) or the id.
   Future<dynamic> registerTramite(Map<String, dynamic> dto) async {
     final res = await http.post('/tramites/register', data: dto);
