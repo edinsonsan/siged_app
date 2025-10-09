@@ -40,11 +40,11 @@ class _TramiteRegisterScreenState extends State<TramiteRegisterScreen> {
             child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
               TextFormField(controller: _cut, decoration: const InputDecoration(labelText: 'CUT'), validator: (v) => (v == null || v.isEmpty) ? 'Obligatorio' : null),
               TextFormField(controller: _asunto, decoration: const InputDecoration(labelText: 'Asunto'), validator: (v) => (v == null || v.isEmpty) ? 'Obligatorio' : null),
-              TextFormField(controller: _tipoDocumento, decoration: const InputDecoration(labelText: 'Tipo Documento')),
+              TextFormField(controller: _tipoDocumento, decoration: const InputDecoration(labelText: 'Tipo Documento'), validator: (v) => (v == null || v.isEmpty) ? 'Obligatorio' : null),
               TextFormField(controller: _folios, decoration: const InputDecoration(labelText: 'Folios'), keyboardType: TextInputType.number),
               const SizedBox(height: 12),
               const Text('Remitente', style: TextStyle(fontWeight: FontWeight.bold)),
-              TextFormField(controller: _remitenteNombre, decoration: const InputDecoration(labelText: 'Nombre'), validator: (v) => (v == null || v.isEmpty) ? 'Obligatorio' : null),
+              TextFormField(controller: _remitenteNombre, decoration: const InputDecoration(labelText: 'Nombre')),
               TextFormField(controller: _remitenteDocumento, decoration: const InputDecoration(labelText: 'DNI / RUC')),
               TextFormField(controller: _remitenteDireccion, decoration: const InputDecoration(labelText: 'Dirección')),
               TextFormField(controller: _remitenteEmail, decoration: const InputDecoration(labelText: 'Email'), keyboardType: TextInputType.emailAddress),
@@ -76,28 +76,43 @@ class _TramiteRegisterScreenState extends State<TramiteRegisterScreen> {
   }
 
   Future<void> _submit() async {
-    if (!_formKey.currentState!.validate()) return;
+    if (!_formKey.currentState!.validate()) {
+      // show snackbar indicating required fields
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Por favor complete los campos requeridos: CUT, Asunto y Tipo Documento')));
+      return;
+    }
     setState(() => _submitting = true);
     try {
     // Capture dependencies and values before any await to avoid using BuildContext after async gaps.
     final authState = context.read<AuthCubit>().state;
     num? creadoPorId;
-    if (authState is AuthAuthenticated) creadoPorId = authState.user.id;
+    num? areaActualId;
+    if (authState is AuthAuthenticated) {
+      creadoPorId = authState.user.id;
+      areaActualId = authState.user.area?.id;
+    }
 
-    final dto = {
+    final Map<String, dynamic> dto = {
       'cut': _cut.text.trim(),
       'asunto': _asunto.text.trim(),
-      'tipo_documento': _tipoDocumento.text.trim(),
-      'folios': int.tryParse(_folios.text.trim()) ?? 0,
-      'remitente': {
-        'nombre': _remitenteNombre.text.trim(),
-        'documento': _remitenteDocumento.text.trim(),
-        'direccion': _remitenteDireccion.text.trim(),
-        'email': _remitenteEmail.text.trim(),
-        'telefono': _remitenteTelefono.text.trim(),
-      },
-      if (creadoPorId != null) 'creado_por_id': creadoPorId,
+      'tipoDocumento': _tipoDocumento.text.trim(),
+      // include created and area ids explicitly; backend allows null
+      'creado_por_id': creadoPorId,
+      'area_actual_id': areaActualId,
     };
+
+    // optional: add folios only if provided
+  final foliosVal = int.tryParse(_folios.text.trim());
+  if (foliosVal != null) dto['folios'] = foliosVal;
+
+    // build remitente map only including non-empty fields
+    final Map<String, dynamic> remitente = {};
+    if (_remitenteNombre.text.trim().isNotEmpty) remitente['nombre'] = _remitenteNombre.text.trim();
+    if (_remitenteDocumento.text.trim().isNotEmpty) remitente['documento'] = _remitenteDocumento.text.trim();
+    if (_remitenteDireccion.text.trim().isNotEmpty) remitente['direccion'] = _remitenteDireccion.text.trim();
+    if (_remitenteEmail.text.trim().isNotEmpty) remitente['email'] = _remitenteEmail.text.trim();
+    if (_remitenteTelefono.text.trim().isNotEmpty) remitente['telefono'] = _remitenteTelefono.text.trim();
+    if (remitente.isNotEmpty) dto['remitente'] = remitente;
 
     final repo = context.read<TramiteRepository>();
     final tramiteCubit = context.read<TramiteCubit?>();
