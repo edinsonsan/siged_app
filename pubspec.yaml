@@ -19,6 +19,7 @@ dependencies:
   fl_chart: ^0.63.0
   timeline_tile: ^2.0.0
   file_picker: ^10.3.3
+  shared_preferences: ^2.5.3
 
 dev_dependencies:
   flutter_test:

@@ -19,6 +19,7 @@ import 'presentation/home/home_screen.dart';
 import 'presentation/tramites/dashboard_screen.dart';
 import 'presentation/tramites/bandeja_tramites_screen.dart';
 import 'presentation/tramites/tramite_detail_screen.dart';
+import 'presentation/settings/settings_cubit.dart';
 import 'presentation/admin/admin_users_screen.dart';
 
 Future<void> main() async {
@@ -48,7 +49,12 @@ Future<void> main() async {
           cubit.checkAuthStatus();
           return cubit;
         },
-        child: const MainApp(),
+        child: MultiBlocProvider(
+          providers: [
+            BlocProvider(create: (_) => SettingsCubit()),
+          ],
+          child: const MainApp(),
+        ),
       ),
     ),
   );
@@ -59,6 +65,9 @@ class MainApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final settingsState = context.watch<SettingsCubit>().state;
+    final themeMode = settingsState.themeMode;
+
     final router = GoRouter(
       initialLocation: '/',
       refreshListenable: _AuthChangeNotifier(context.read<AuthCubit>()),
@@ -153,6 +162,17 @@ class MainApp extends StatelessWidget {
 
     return MaterialApp.router(
       debugShowCheckedModeBanner: false,
+      theme: ThemeData(
+        colorScheme: ColorScheme.fromSeed(seedColor: Colors.teal),
+        useMaterial3: true,
+        brightness: Brightness.light,
+      ),
+      darkTheme: ThemeData(
+        colorScheme: ColorScheme.fromSeed(seedColor: Colors.teal, brightness: Brightness.dark),
+        useMaterial3: true,
+        brightness: Brightness.dark,
+      ),
+      themeMode: themeMode,
       routerDelegate: router.routerDelegate,
       routeInformationParser: router.routeInformationParser,
       routeInformationProvider: router.routeInformationProvider,

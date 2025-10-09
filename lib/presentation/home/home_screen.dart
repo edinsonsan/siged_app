@@ -3,6 +3,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import '../../domain/models/user.dart';
 import '../auth/auth_cubit.dart';
+import '../settings/settings_cubit.dart';
 
 class HomeScreen extends StatefulWidget {
   final Widget? child;
@@ -59,6 +60,13 @@ class _HomeScreenState extends State<HomeScreen> {
       appBar: AppBar(
         title: const Text('SIGED App'),
         actions: [
+          BlocBuilder<SettingsCubit, dynamic>(builder: (context, sState) {
+            final mode = (sState is SettingsState) ? sState.themeMode : ThemeMode.light;
+            return IconButton(
+              icon: Icon(mode == ThemeMode.dark ? Icons.dark_mode : Icons.light_mode),
+              onPressed: () => context.read<SettingsCubit>().toggleTheme(),
+            );
+          }),
           if (userName.isNotEmpty)
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 12.0),

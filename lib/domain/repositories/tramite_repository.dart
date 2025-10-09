@@ -62,7 +62,9 @@ class TramiteRepository {
       list = data.map((e) => TramiteModel.fromJson(e as Map<String, dynamic>)).toList();
       total = list.length;
     } else if (data is Map<String, dynamic>) {
-      if (data['data'] is List) {
+      if (data['items'] is List) { // <-- ¡CAMBIO CRUCIAL!
+        list = (data['items'] as List).map((e) => TramiteModel.fromJson(e as Map<String, dynamic>)).toList();
+      } else if (data['data'] is List) { // Mantiene la compatibilidad con 'data'
         list = (data['data'] as List).map((e) => TramiteModel.fromJson(e as Map<String, dynamic>)).toList();
       }
       if (data['total'] != null) {
