@@ -18,6 +18,7 @@ dependencies:
   go_router: ^16.2.4
   fl_chart: ^0.63.0
   timeline_tile: ^2.0.0
+  file_picker: ^10.3.3
 
 dev_dependencies:
   flutter_test:

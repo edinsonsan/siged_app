@@ -4,6 +4,7 @@ import '../../domain/models/tramite_model.dart';
 import '../../domain/repositories/tramite_repository.dart';
 import 'tramite_cubit.dart';
 import 'tramite_detail_screen.dart';
+import 'tramite_register_screen.dart';
 
 class BandejaTramitesScreen extends StatelessWidget {
   const BandejaTramitesScreen({super.key});
@@ -44,6 +45,8 @@ class _BandejaViewState extends State<_BandejaView> {
                   onSubmitted: (v) => context.read<TramiteCubit>().applySearch(v.isEmpty ? null : v),
                 ),
               ),
+              const SizedBox(width: 12),
+              ElevatedButton.icon(onPressed: () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => const TramiteRegisterScreen())), icon: const Icon(Icons.add), label: const Text('Nuevo Trámite')),
               const SizedBox(width: 12),
               DropdownButton<String?>(
                 value: _selectedEstado,

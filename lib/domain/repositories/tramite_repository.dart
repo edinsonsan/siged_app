@@ -1,3 +1,4 @@
+import 'package:dio/dio.dart';
 import '../../core/services/http_service.dart';
 import '../models/tramite_model.dart';
 import '../models/historial_tramite_model.dart';
@@ -72,5 +73,21 @@ class TramiteRepository {
     }
 
     return {'list': list, 'total': total};
+  }
+
+  /// Register a new tramite. Returns the created tramite object (if API returns it) or the id.
+  Future<dynamic> registerTramite(Map<String, dynamic> dto) async {
+    final res = await http.post('/tramites/register', data: dto);
+    final data = res.data;
+    if (data is Map<String, dynamic>) return data;
+    return data;
+  }
+
+  /// Upload a document for a tramite. `fileBytes` is the raw bytes of the file and `filename` is the file name.
+  Future<void> uploadDocumento(num tramiteId, List<int> fileBytes, String filename, {String fieldName = 'file'}) async {
+    final formData = FormData.fromMap({
+      fieldName: MultipartFile.fromBytes(fileBytes, filename: filename),
+    });
+    await http.post('/documentos/\$tramiteId'.replaceAll('\$tramiteId', tramiteId.toString()), data: formData);
   }
 }
