@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../auth/auth_cubit.dart';
 import 'package:timeline_tile/timeline_tile.dart';
+import '../../domain/models/user.dart';
 
 import '../../domain/models/tramite_model.dart';
 import '../../domain/repositories/tramite_repository.dart';
@@ -137,24 +138,30 @@ class _TramiteDetailScreenState extends State<TramiteDetailScreen> {
           const SizedBox(height: 8),
           Text('No hay adjuntos implementados aún.'),
           const SizedBox(height: 24),
-          Row(
-            children: [
-              ElevatedButton(
-                onPressed: () => _showDerivarDialog(context, state.tramite),
-                child: const Text('Derivar'),
-              ),
-              const SizedBox(width: 8),
-              ElevatedButton(
-                onPressed: () => _confirmFinalizar(context, state.tramite),
-                child: const Text('Finalizar'),
-              ),
-              const SizedBox(width: 8),
-              ElevatedButton(
-                onPressed: () => _showObservarDialog(context, state.tramite),
-                child: const Text('Observar'),
-              ),
-            ],
-          )
+          // Show action buttons only for ADMIN and AREA roles
+          Builder(builder: (context) {
+            final authState = context.read<AuthCubit>().state;
+            final canAct = authState is AuthAuthenticated && (authState.user.rol == UserRole.admin || authState.user.rol == UserRole.area);
+            if (!canAct) return const SizedBox.shrink();
+            return Row(
+              children: [
+                ElevatedButton(
+                  onPressed: () => _showDerivarDialog(context, state.tramite),
+                  child: const Text('Derivar'),
+                ),
+                const SizedBox(width: 8),
+                ElevatedButton(
+                  onPressed: () => _confirmFinalizar(context, state.tramite),
+                  child: const Text('Finalizar'),
+                ),
+                const SizedBox(width: 8),
+                ElevatedButton(
+                  onPressed: () => _showObservarDialog(context, state.tramite),
+                  child: const Text('Observar'),
+                ),
+              ],
+            );
+          })
         ],
       ),
     );

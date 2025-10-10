@@ -14,6 +14,7 @@ import 'domain/repositories/admin_repository.dart';
 import 'presentation/admin/user_management_screen.dart';
 import 'presentation/admin/area_management_screen.dart';
 import 'presentation/auth/auth_cubit.dart';
+import 'domain/models/user.dart';
 import 'presentation/auth/login_screen.dart';
 import 'presentation/home/home_screen.dart';
 import 'presentation/tramites/dashboard_screen.dart';
@@ -101,6 +102,13 @@ class MainApp extends StatelessWidget {
         if (authState is AuthAuthenticated) {
           // If authenticated, prevent going to login
           if (goingToLogin) return '/home/dashboard';
+
+          // RBAC: Protect admin routes - only allow ADMIN role to access /home/admin/* and /home/users
+          final role = authState.user.rol;
+          final isAdmin = role == UserRole.admin;
+          final isAdminRoute = dest != null && (dest.startsWith('/home/admin') || dest == '/home/users');
+          if (isAdminRoute && !isAdmin) return '/home/dashboard';
+
           // allow navigation
           return null;
         }

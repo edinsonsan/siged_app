@@ -5,6 +5,8 @@ import '../../domain/repositories/tramite_repository.dart';
 import 'tramite_cubit.dart';
 import 'tramite_register_screen.dart';
 import 'package:go_router/go_router.dart';
+import '../auth/auth_cubit.dart';
+import '../../domain/models/user.dart';
 
 class BandejaTramitesScreen extends StatelessWidget {
   const BandejaTramitesScreen({super.key});
@@ -29,7 +31,7 @@ class _BandejaViewState extends State<_BandejaView> {
   final _searchController = TextEditingController();
   String? _selectedEstado;
   int _rowsPerPage = PaginatedDataTable.defaultRowsPerPage;
-  bool _showAll = false;
+  // final bool _showAll = false;
 
   @override
   Widget build(BuildContext context) {
@@ -47,7 +49,13 @@ class _BandejaViewState extends State<_BandejaView> {
                 ),
               ),
               const SizedBox(width: 12),
-              ElevatedButton.icon(onPressed: () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => const TramiteRegisterScreen())), icon: const Icon(Icons.add), label: const Text('Nuevo Trámite')),
+              // Show Nuevo Trámite only for ADMIN and MESA_PARTES
+              Builder(builder: (context) {
+                final authState = context.read<AuthCubit>().state;
+                final showNuevo = authState is AuthAuthenticated && (authState.user.rol == UserRole.admin || authState.user.rol == UserRole.mesaPartes);
+                if (!showNuevo) return const SizedBox.shrink();
+                return ElevatedButton.icon(onPressed: () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => const TramiteRegisterScreen())), icon: const Icon(Icons.add), label: const Text('Nuevo Trámite'));
+              }),
               const SizedBox(width: 12),
               DropdownButton<String?>(
                 value: _selectedEstado,
@@ -61,13 +69,13 @@ class _BandejaViewState extends State<_BandejaView> {
                 },
               ),
               const SizedBox(width: 12),
-              Row(children: [
-                Checkbox(value: _showAll, onChanged: (v) {
-                  setState(() => _showAll = v ?? false);
-                  context.read<TramiteCubit>().setShowAll(_showAll);
-                }),
-                const Text('Mostrar todos')
-              ])
+              // Row(children: [
+              //   Checkbox(value: _showAll, onChanged: (v) {
+              //     setState(() => _showAll = v ?? false);
+              //     context.read<TramiteCubit>().setShowAll(_showAll);
+              //   }),
+              //   const Text('Mostrar todos')
+              // ])
             ],
           ),
         ),

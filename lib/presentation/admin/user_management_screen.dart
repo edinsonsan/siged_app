@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import '../auth/auth_cubit.dart';
 import '../../domain/models/user.dart';
 import '../../domain/repositories/admin_repository.dart';
 import 'user_list_cubit.dart';
@@ -38,10 +39,15 @@ class _UserManagementViewState extends State<_UserManagementView> {
               padding: const EdgeInsets.all(12.0),
               child: Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
                 const Text('Administración de Usuarios', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
-                ElevatedButton(
-                  onPressed: () => _showCreateDialog(context),
-                  child: const Text('Crear usuario'),
-                )
+                Builder(builder: (context) {
+                  final authState = context.read<AuthCubit>().state;
+                  final show = authState is AuthAuthenticated && authState.user.rol == UserRole.admin;
+                  if (!show) return const SizedBox.shrink();
+                  return ElevatedButton(
+                    onPressed: () => _showCreateDialog(context),
+                    child: const Text('Crear usuario'),
+                  );
+                })
               ]),
             ),
             Expanded(
@@ -128,10 +134,15 @@ class _UserDataSource extends DataTableSource {
       DataCell(Text(u.email)),
       DataCell(Text(u.rol.toString().split('.').last)),
       DataCell(Text(u.area?.nombre ?? '-')),
-      DataCell(Row(children: [
-        IconButton(icon: const Icon(Icons.edit), onPressed: () => _showEditDialog(context, u)),
-        IconButton(icon: const Icon(Icons.delete), onPressed: () => _confirmDelete(context, u)),
-      ])),
+      DataCell(Builder(builder: (context) {
+        final authState = context.read<AuthCubit>().state;
+        final show = authState is AuthAuthenticated && authState.user.rol == UserRole.admin;
+        if (!show) return const SizedBox.shrink();
+        return Row(children: [
+          IconButton(icon: const Icon(Icons.edit), onPressed: () => _showEditDialog(context, u)),
+          IconButton(icon: const Icon(Icons.delete), onPressed: () => _confirmDelete(context, u)),
+        ]);
+      })),
     ]);
   }
 

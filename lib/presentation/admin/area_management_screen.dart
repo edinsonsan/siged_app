@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import '../auth/auth_cubit.dart';
+import '../../domain/models/user.dart';
 import '../../domain/repositories/admin_repository.dart';
 import 'area_list_cubit.dart';
 
@@ -30,11 +32,16 @@ class _AreaManagementViewState extends State<_AreaManagementView> {
       if (state is AreaListLoaded) {
         return Column(
           children: [
-            Padding(
+                Padding(
               padding: const EdgeInsets.all(12.0),
               child: Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
                 const Text('Administración de Áreas', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
-                ElevatedButton(onPressed: () => _showCreateDialog(context), child: const Text('Crear Área'))
+                Builder(builder: (context) {
+                  final authState = context.read<AuthCubit>().state;
+                  final show = authState is AuthAuthenticated && authState.user.rol == UserRole.admin;
+                  if (!show) return const SizedBox.shrink();
+                  return ElevatedButton(onPressed: () => _showCreateDialog(context), child: const Text('Crear Área'));
+                })
               ]),
             ),
             Expanded(
@@ -46,8 +53,15 @@ class _AreaManagementViewState extends State<_AreaManagementView> {
                     title: Text(a.nombre),
                     subtitle: Text(a.descripcion ?? ''),
                     trailing: Row(mainAxisSize: MainAxisSize.min, children: [
-                      IconButton(icon: const Icon(Icons.edit), onPressed: () => _showEditDialog(context, a)),
-                      IconButton(icon: const Icon(Icons.delete), onPressed: () => _confirmDelete(context, a)),
+                      Builder(builder: (context) {
+                        final authState = context.read<AuthCubit>().state;
+                        final show = authState is AuthAuthenticated && authState.user.rol == UserRole.admin;
+                        if (!show) return const SizedBox.shrink();
+                        return Row(children: [
+                          IconButton(icon: const Icon(Icons.edit), onPressed: () => _showEditDialog(context, a)),
+                          IconButton(icon: const Icon(Icons.delete), onPressed: () => _confirmDelete(context, a)),
+                        ]);
+                      })
                     ]),
                   );
                 },
