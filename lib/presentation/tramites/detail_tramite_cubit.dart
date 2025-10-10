@@ -27,11 +27,11 @@ class DetailTramiteCubit extends Cubit<DetailTramiteState> {
     emit(DetailTramiteActionInProgress());
     try {
       await repository.derivarTramite(id, toAreaId, userId: userId);
-      // refresh historial
+      // reload entire tramite and historial if we have the current tramite
       final current = state;
       if (current is DetailTramiteLoaded) {
-        final historial = await repository.getHistorial(current.tramite.id);
-        emit(current.copyWith(historial: historial));
+        await loadTramite(current.tramite);
+        emit(DetailTramiteSuccess(message: 'Trámite derivado'));
       } else {
         emit(DetailTramiteSuccess(message: 'Trámite derivado'));
       }
@@ -40,14 +40,14 @@ class DetailTramiteCubit extends Cubit<DetailTramiteState> {
     }
   }
 
-  Future<void> finalizar(num id, {int? userId}) async {
+  Future<void> finalizar(num id, int userId) async {
     emit(DetailTramiteActionInProgress());
     try {
       await repository.finalizeTramite(id, userId: userId);
       final current = state;
       if (current is DetailTramiteLoaded) {
-        final historial = await repository.getHistorial(current.tramite.id);
-        emit(current.copyWith(historial: historial));
+        await loadTramite(current.tramite);
+        emit(DetailTramiteSuccess(message: 'Trámite finalizado'));
       } else {
         emit(DetailTramiteSuccess(message: 'Trámite finalizado'));
       }
@@ -56,14 +56,14 @@ class DetailTramiteCubit extends Cubit<DetailTramiteState> {
     }
   }
 
-  Future<void> observar(num id, String comment, {int? userId}) async {
+  Future<void> observar(num id, String comment, int userId) async {
     emit(DetailTramiteActionInProgress());
     try {
       await repository.observeTramite(id, comment, userId: userId);
       final current = state;
       if (current is DetailTramiteLoaded) {
-        final historial = await repository.getHistorial(current.tramite.id);
-        emit(current.copyWith(historial: historial));
+        await loadTramite(current.tramite);
+        emit(DetailTramiteSuccess(message: 'Observación añadida'));
       } else {
         emit(DetailTramiteSuccess(message: 'Observación añadida'));
       }

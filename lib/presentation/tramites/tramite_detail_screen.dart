@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import '../auth/auth_cubit.dart';
 import 'package:timeline_tile/timeline_tile.dart';
 
 import '../../domain/models/tramite_model.dart';
@@ -176,7 +177,9 @@ class _TramiteDetailScreenState extends State<TramiteDetailScreen> {
             onPressed: () {
               final toAreaId = int.tryParse(areaController.text);
               if (toAreaId != null) {
-                context.read<DetailTramiteCubit>().derivar(tramite.id, toAreaId);
+                final authState = context.read<AuthCubit>().state;
+                final int? userId = authState is AuthAuthenticated ? authState.user.id.toInt() : null;
+                context.read<DetailTramiteCubit>().derivar(tramite.id.toInt(), toAreaId, userId: userId);
                 Navigator.of(context).pop();
               }
             },
@@ -204,7 +207,13 @@ class _TramiteDetailScreenState extends State<TramiteDetailScreen> {
             onPressed: () {
               final comment = commentController.text.trim();
               if (comment.isNotEmpty) {
-                context.read<DetailTramiteCubit>().observar(tramite.id, comment);
+                final authState = context.read<AuthCubit>().state;
+                if (authState is! AuthAuthenticated) {
+                  ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Debe iniciar sesión para observar')));
+                  return;
+                }
+                final int userId = authState.user.id.toInt();
+                context.read<DetailTramiteCubit>().observar(tramite.id.toInt(), comment, userId);
                 Navigator.of(context).pop();
               }
             },
@@ -225,7 +234,13 @@ class _TramiteDetailScreenState extends State<TramiteDetailScreen> {
           TextButton(onPressed: () => Navigator.of(context).pop(), child: const Text('Cancelar')),
           ElevatedButton(
             onPressed: () {
-              context.read<DetailTramiteCubit>().finalizar(tramite.id);
+              final authState = context.read<AuthCubit>().state;
+              if (authState is! AuthAuthenticated) {
+                ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Debe iniciar sesión para finalizar')));
+                return;
+              }
+              final int userId = authState.user.id.toInt();
+              context.read<DetailTramiteCubit>().finalizar(tramite.id.toInt(), userId);
               Navigator.of(context).pop();
             },
             child: const Text('Finalizar'),
