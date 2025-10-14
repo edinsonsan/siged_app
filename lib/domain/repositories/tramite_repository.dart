@@ -41,7 +41,8 @@ class TramiteRepository {
   }
 
   Future<List<HistorialTramiteModel>> getHistorial(num tramiteId) async {
-    final res = await http.get('/tramites/\$tramiteId/historial'.replaceAll('\$tramiteId', tramiteId.toString()));
+    // CAMBIO: La ruta ahora apunta a /historial/{id} en lugar de /tramites/{id}/historial
+    final res = await http.get('/historial/${tramiteId.toString()}');
     final data = res.data;
     if (data is List) {
       return data.map((e) => HistorialTramiteModel.fromJson(e as Map<String, dynamic>)).toList();
@@ -94,11 +95,14 @@ class TramiteRepository {
     return data;
   }
 
-  /// Upload a document for a tramite. `fileBytes` is the raw bytes of the file and `filename` is the file name.
-  Future<void> uploadDocumento(num tramiteId, List<int> fileBytes, String filename, {String fieldName = 'file'}) async {
-    final formData = FormData.fromMap({
-      fieldName: MultipartFile.fromBytes(fileBytes, filename: filename),
-    });
-    await http.post('/documentos/\$tramiteId'.replaceAll('\$tramiteId', tramiteId.toString()), data: formData);
+  Future<void> uploadDocumento(num tramiteId, List<int> fileBytes, String filename, {String fieldName = 'file', int? userId}) async {
+      final formData = FormData.fromMap({
+          fieldName: MultipartFile.fromBytes(fileBytes, filename: filename),
+          if (userId != null) 'subido_por_id': userId.toString(), 
+      });
+      await http.post(
+          '/documentos/\$tramiteId'.replaceAll('\$tramiteId', tramiteId.toString()), 
+          data: formData
+      );
   }
 }

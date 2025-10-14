@@ -54,7 +54,20 @@ class _BandejaViewState extends State<_BandejaView> {
                 final authState = context.read<AuthCubit>().state;
                 final showNuevo = authState is AuthAuthenticated && (authState.user.rol == UserRole.admin || authState.user.rol == UserRole.mesaPartes);
                 if (!showNuevo) return const SizedBox.shrink();
-                return ElevatedButton.icon(onPressed: () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => const TramiteRegisterScreen())), icon: const Icon(Icons.add), label: const Text('Nuevo Trámite'));
+                final tramiteCubit = context.read<TramiteCubit>(); 
+                return ElevatedButton.icon(
+                  onPressed: () => Navigator.of(context).push(
+                    MaterialPageRoute(
+                      builder: (_) => BlocProvider.value( // Usamos BlocProvider.value para reusar el Cubit
+                        value: tramiteCubit,
+                        child: const TramiteRegisterScreen(),
+                      ),
+                    ),
+                  ),
+                  icon: const Icon(Icons.add),
+                  label: const Text('Nuevo Trámite'),
+                );
+                // return ElevatedButton.icon(onPressed: () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => const TramiteRegisterScreen())), icon: const Icon(Icons.add), label: const Text('Nuevo Trámite'));
               }),
               const SizedBox(width: 12),
               DropdownButton<String?>(
@@ -142,10 +155,13 @@ class _TramiteDataSource extends DataTableSource {
     }
 
     return DataRow.byIndex(index: index, cells: [
-      DataCell(Text(t.cut), onTap: () => GoRouter.of(context).go('/home/bandeja/\${t.id}')),
+      DataCell(Text(t.cut), onTap: () {
+      // print('Haciendo clic en trámite con ID: ${t.id} (Tipo: ${t.id.runtimeType})');
+      GoRouter.of(context).go('/home/bandeja/${t.id}');
+    },),
       DataCell(Text(t.asunto)),
       DataCell(Text(t.remitenteNombre)),
-      DataCell(Text(t.fechaCreacion)),
+      DataCell(Text(t.fechaCreacion.toLocal().toString().split(' ').first)),
       DataCell(Text(t.areaActual?.nombre ?? '-')),
       DataCell(Container(padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4), decoration: BoxDecoration(color: estadoColor, borderRadius: BorderRadius.circular(8)), child: Text(t.estado.toString().split('.').last))),
     ]);

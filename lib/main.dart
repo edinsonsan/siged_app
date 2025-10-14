@@ -140,23 +140,11 @@ class MainApp extends StatelessWidget {
             GoRoute(
               path: '/home/bandeja/:id',
               builder: (context, state) {
-                // Extract id from multiple possible properties depending on go_router version
-                String? idStr;
-                try {
-                  idStr = (state as dynamic).params?['id'] as String?;
-                } catch (_) {
-                  try {
-                    idStr = (state as dynamic).pathParameters?['id'] as String?;
-                  } catch (_) {
-                    try {
-                      final map = (state as dynamic).params as Map<String, dynamic>?;
-                      idStr = map?['id']?.toString();
-                    } catch (_) {
-                      idStr = null;
-                    }
-                  }
-                }
-                final id = int.tryParse(idStr ?? '');
+                // 1. Extraer el ID de los parámetros de la ruta. Es un String.
+                final idString = state.pathParameters['id'];
+                // 3. Convertir el String a int. Si falla (es null o no es un número), será null.
+                final id = int.tryParse(idString ?? '');
+                // 4. Pasar el id (que puede ser null si hay error) a la pantalla.
                 return TramiteDetailScreen.fromId(id: id);
               },
             ),

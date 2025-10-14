@@ -9,10 +9,16 @@ class TramiteModel extends Equatable {
   final String cut;
   final String asunto;
   final String remitenteNombre;
-  final String fechaCreacion;
+  final DateTime fechaCreacion;
   final Area? areaActual;
   final TramiteEstado estado;
   final User? creadoPor;
+
+  final String? remitenteDniRuc;
+  final String? remitenteDireccion;
+  final String? remitenteTelefono;
+  final String? remitenteEmail;
+
 
   const TramiteModel({
     required this.id,
@@ -23,6 +29,10 @@ class TramiteModel extends Equatable {
     this.areaActual,
     required this.estado,
     this.creadoPor,
+    this.remitenteDniRuc = '',
+    this.remitenteDireccion = '',
+    this.remitenteTelefono = '',
+    this.remitenteEmail = '',
   });
 
   factory TramiteModel.fromJson(Map<String, dynamic> json) {
@@ -45,11 +55,17 @@ class TramiteModel extends Equatable {
       id: json['id'] as num,
       cut: json['cut'] as String? ?? json['CUT'] as String? ?? '',
       asunto: json['asunto'] as String? ?? '',
-      remitenteNombre: (json['remitenteNombre'] ?? json['remitente_nombre'] ?? json['remitenteNombreCompleto']) as String? ?? '',
-      fechaCreacion: (json['fechaCreacion'] ?? json['fecha_creacion'] ?? json['created_at']) as String? ?? '',
-      areaActual: json['area_actual'] is Map<String, dynamic> ? Area.fromJson(json['area_actual'] as Map<String, dynamic>) : (json['area'] is Map<String, dynamic> ? Area.fromJson(json['area'] as Map<String, dynamic>) : null),
+      remitenteNombre: (json['remitenteNombre'] ?? json['remitenteNombre'] ?? json['remitenteNombreCompleto']) as String? ?? '',
+      // fechaCreacion: (json['fechaCreacion'] ?? json['fecha_creacion'] ?? json['created_at']) as String? ?? '',
+      fechaCreacion: DateTime.parse(json['fechaCreacion'] ?? ''),
+      areaActual: json['areaActual'] is Map<String, dynamic> ? Area.fromJson(json['areaActual'] as Map<String, dynamic>) : (json['area'] is Map<String, dynamic> ? Area.fromJson(json['area'] as Map<String, dynamic>) : null),
       estado: parseEstado(json['estado'] as String?),
-      creadoPor: json['creado_por'] is Map<String, dynamic> ? User.fromJson(json['creado_por'] as Map<String, dynamic>) : null,
+      creadoPor: json['creadoPor'] is Map<String, dynamic> ? User.fromJson(json['creadoPor'] as Map<String, dynamic>) : null,
+
+      remitenteDniRuc: json['remitenteDniRuc'] as String? ?? '',
+      remitenteDireccion: json['remitenteDireccion'] as String? ?? '',
+      remitenteTelefono: json['remitenteTelefono'] as String? ?? '',
+      remitenteEmail: json['remitenteEmail'] as String? ?? '',
     );
   }
 
@@ -78,5 +94,7 @@ class TramiteModel extends Equatable {
   }
 
   @override
-  List<Object?> get props => [id, cut, asunto, remitenteNombre, fechaCreacion, areaActual, estado, creadoPor];
+  List<Object?> get props => [id, cut, asunto, remitenteNombre, fechaCreacion, areaActual, estado, creadoPor,
+    remitenteDniRuc, remitenteDireccion, remitenteTelefono, remitenteEmail
+  ];
 }
