@@ -12,13 +12,14 @@ class DashboardLoading extends DashboardState {
 }
 
 class DashboardLoaded extends DashboardState {
-  final List<AreaCount> areaCounts;
+  final List<AreaStatusCount> areaCounts;
   final TiemposRespuesta tiempos;
+  final List<ReporteUsuarioModel> userActivity; 
 
-  const DashboardLoaded({required this.areaCounts, required this.tiempos});
+  const DashboardLoaded({required this.areaCounts, required this.tiempos, required this.userActivity});
 
   @override
-  List<Object?> get props => [areaCounts, tiempos];
+  List<Object?> get props => [areaCounts, tiempos, userActivity];
 }
 
 class DashboardError extends DashboardState {

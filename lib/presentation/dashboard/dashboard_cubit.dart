@@ -16,7 +16,8 @@ class DashboardCubit extends Cubit<DashboardState> {
     try {
       final areaCounts = await repository.getTramitesPorArea();
       final tiempos = await repository.getTiemposRespuesta();
-      emit(DashboardLoaded(areaCounts: areaCounts, tiempos: tiempos));
+      final userActivity = await repository.getTramitesPorUsuario(); 
+      emit(DashboardLoaded(areaCounts: areaCounts, tiempos: tiempos, userActivity: userActivity));
     } catch (e) {
       emit(DashboardError(e.toString()));
     }
