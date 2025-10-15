@@ -5,6 +5,7 @@ import '../../domain/repositories/tramite_repository.dart';
 import 'tramite_cubit.dart';
 import 'tramite_register_screen.dart';
 import 'package:go_router/go_router.dart';
+import 'package:animate_do/animate_do.dart';
 import '../auth/auth_cubit.dart';
 import '../../domain/models/user.dart';
 
@@ -37,59 +38,79 @@ class _BandejaViewState extends State<_BandejaView> {
   Widget build(BuildContext context) {
     return Column(
       children: [
-        Padding(
-          padding: const EdgeInsets.all(12.0),
-          child: Row(
-            children: [
-              Expanded(
-                child: TextField(
-                  controller: _searchController,
-                  decoration: const InputDecoration(prefixIcon: Icon(Icons.search), hintText: 'Buscar por CUT o Asunto'),
-                  onSubmitted: (v) => context.read<TramiteCubit>().applySearch(v.isEmpty ? null : v),
-                ),
-              ),
-              const SizedBox(width: 12),
-              // Show Nuevo Trámite only for ADMIN and MESA_PARTES
-              Builder(builder: (context) {
-                final authState = context.read<AuthCubit>().state;
-                final showNuevo = authState is AuthAuthenticated && (authState.user.rol == UserRole.admin || authState.user.rol == UserRole.mesaPartes);
-                if (!showNuevo) return const SizedBox.shrink();
-                final tramiteCubit = context.read<TramiteCubit>(); 
-                return ElevatedButton.icon(
-                  onPressed: () => Navigator.of(context).push(
-                    MaterialPageRoute(
-                      builder: (_) => BlocProvider.value( // Usamos BlocProvider.value para reusar el Cubit
-                        value: tramiteCubit,
-                        child: const TramiteRegisterScreen(),
+        FadeInDown(
+          duration: const Duration(milliseconds: 300),
+          child: Padding(
+            padding: const EdgeInsets.all(12.0),
+            child: Card(
+              elevation: 2,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 12.0, vertical: 10.0),
+                child: Row(
+                  children: [
+                    // Search
+                    Expanded(
+                      child: TextField(
+                        controller: _searchController,
+                        decoration: InputDecoration(
+                          prefixIcon: const Icon(Icons.search),
+                          hintText: 'Buscar por CUT o Asunto',
+                          filled: true,
+                          fillColor: Theme.of(context).colorScheme.surfaceContainerHighest,
+                          isDense: true,
+                          contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+                          border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
+                        ),
+                        onSubmitted: (v) => context.read<TramiteCubit>().applySearch(v.isEmpty ? null : v),
                       ),
                     ),
-                  ),
-                  icon: const Icon(Icons.add),
-                  label: const Text('Nuevo Trámite'),
-                );
-                // return ElevatedButton.icon(onPressed: () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => const TramiteRegisterScreen())), icon: const Icon(Icons.add), label: const Text('Nuevo Trámite'));
-              }),
-              const SizedBox(width: 12),
-              DropdownButton<String?>(
-                value: _selectedEstado,
-                hint: const Text('Estado'),
-                items: [null, 'RECIBIDO', 'EN_PROCESO', 'OBSERVADO', 'FINALIZADO']
-                    .map((e) => DropdownMenuItem<String?>(value: e, child: Text(e ?? 'Todos')))
-                    .toList(),
-                onChanged: (v) {
-                  setState(() => _selectedEstado = v);
-                  context.read<TramiteCubit>().applyEstado(v);
-                },
+                    const SizedBox(width: 12),
+
+                    // Estado filter styled
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                      decoration: BoxDecoration(borderRadius: BorderRadius.circular(8), border: Border.all(color: Theme.of(context).dividerColor)),
+                      child: DropdownButtonHideUnderline(
+                        child: DropdownButton<String?>(
+                          value: _selectedEstado,
+                          hint: const Text('Estado'),
+                          items: [null, 'RECIBIDO', 'EN_PROCESO', 'OBSERVADO', 'FINALIZADO']
+                              .map((e) => DropdownMenuItem<String?>(value: e, child: Text(e == null ? 'Todos' : _estadoLabel(e))))
+                              .toList(),
+                          onChanged: (v) {
+                            setState(() => _selectedEstado = v);
+                            context.read<TramiteCubit>().applyEstado(v);
+                          },
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+
+                    // Nuevo Trámite (role-based)
+                    Builder(builder: (context) {
+                      final authState = context.read<AuthCubit>().state;
+                      final showNuevo = authState is AuthAuthenticated && (authState.user.rol == UserRole.admin || authState.user.rol == UserRole.mesaPartes);
+                      if (!showNuevo) return const SizedBox.shrink();
+                      final tramiteCubit = context.read<TramiteCubit>();
+                      return ElevatedButton.icon(
+                        style: ElevatedButton.styleFrom(backgroundColor: Theme.of(context).colorScheme.primary),
+                        onPressed: () => Navigator.of(context).push(
+                          MaterialPageRoute(
+                            builder: (_) => BlocProvider.value( // reuse the Cubit for the register screen
+                              value: tramiteCubit,
+                              child: const TramiteRegisterScreen(),
+                            ),
+                          ),
+                        ),
+                        icon: const Icon(Icons.add, color: Colors.white),
+                        label: const Text('Nuevo Trámite', style: TextStyle(color: Colors.white)),
+                      );
+                    }),
+                  ],
+                ),
               ),
-              const SizedBox(width: 12),
-              // Row(children: [
-              //   Checkbox(value: _showAll, onChanged: (v) {
-              //     setState(() => _showAll = v ?? false);
-              //     context.read<TramiteCubit>().setShowAll(_showAll);
-              //   }),
-              //   const Text('Mostrar todos')
-              // ])
-            ],
+            ),
           ),
         ),
         Expanded(
@@ -98,26 +119,36 @@ class _BandejaViewState extends State<_BandejaView> {
             if (state is TramiteError) return Center(child: Text('Error: ${state.message}'));
             if (state is TramiteLoaded) {
               final source = _TramiteDataSource(state.list, context);
-              return SingleChildScrollView(
-                child: PaginatedDataTable(
-                  header: const Text('Bandeja de Trámites'),
-                  columns: const [
-                    DataColumn(label: Text('CUT')),
-                    DataColumn(label: Text('Asunto')),
-                    DataColumn(label: Text('Remitente')),
-                    DataColumn(label: Text('Fecha')),
-                    DataColumn(label: Text('Área Actual')),
-                    DataColumn(label: Text('Estado')),
-                  ],
-                  source: source,
-                  rowsPerPage: _rowsPerPage,
-                  onRowsPerPageChanged: (r) {
-                    if (r != null) setState(() => _rowsPerPage = r);
-                  },
-                  availableRowsPerPage: const [5, 10, 20],
-                  onPageChanged: (firstRowIndex) {
-                    context.read<TramiteCubit>().changePage(_rowsPerPage, firstRowIndex);
-                  },
+              return FadeInUp(
+                duration: const Duration(milliseconds: 300),
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 12.0),
+                  child: Card(
+                    elevation: 1,
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                    child: SingleChildScrollView(
+                      child: PaginatedDataTable(
+                        header: const Text('Bandeja de Trámites'),
+                        columns: const [
+                          DataColumn(label: Text('CUT')),
+                          DataColumn(label: Text('Asunto')),
+                          DataColumn(label: Text('Remitente')),
+                          DataColumn(label: Text('Fecha')),
+                          DataColumn(label: Text('Área Actual')),
+                          DataColumn(label: Text('Estado')),
+                        ],
+                        source: source,
+                        rowsPerPage: _rowsPerPage,
+                        onRowsPerPageChanged: (r) {
+                          if (r != null) setState(() => _rowsPerPage = r);
+                        },
+                        availableRowsPerPage: const [5, 10, 20],
+                        onPageChanged: (firstRowIndex) {
+                          context.read<TramiteCubit>().changePage(_rowsPerPage, firstRowIndex);
+                        },
+                      ),
+                    ),
+                  ),
                 ),
               );
             }
@@ -138,32 +169,33 @@ class _TramiteDataSource extends DataTableSource {
   @override
   DataRow getRow(int index) {
     final t = data[index];
-    Color estadoColor;
-    switch (t.estado) {
-      case TramiteEstado.finalizado:
-        estadoColor = Colors.green;
-        break;
-      case TramiteEstado.enProceso:
-        estadoColor = Colors.yellow.shade700;
-        break;
-      case TramiteEstado.observado:
-        estadoColor = Colors.red;
-        break;
-      case TramiteEstado.recibido:
-        estadoColor = Colors.grey;
-        break;
+    Color estadoColor() {
+      if (t.estado == TramiteEstado.finalizado) return Colors.green.shade700;
+      if (t.estado == TramiteEstado.enProceso) return Colors.orange.shade700;
+      if (t.estado == TramiteEstado.observado) return Colors.red.shade700;
+      return Colors.blue.shade700;
     }
 
     return DataRow.byIndex(index: index, cells: [
-      DataCell(Text(t.cut), onTap: () {
-      // print('Haciendo clic en trámite con ID: ${t.id} (Tipo: ${t.id.runtimeType})');
-      GoRouter.of(context).go('/home/bandeja/${t.id}');
-    },),
+      DataCell(
+        Text(t.cut, style: const TextStyle(fontWeight: FontWeight.bold)),
+        onTap: () {
+          GoRouter.of(context).go('/home/bandeja/${t.id}');
+        },
+      ),
       DataCell(Text(t.asunto)),
       DataCell(Text(t.remitenteNombre)),
       DataCell(Text(t.fechaCreacion.toLocal().toString().split(' ').first)),
       DataCell(Text(t.areaActual?.nombre ?? '-')),
-      DataCell(Container(padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4), decoration: BoxDecoration(color: estadoColor, borderRadius: BorderRadius.circular(8)), child: Text(t.estado.toString().split('.').last))),
+      DataCell(
+        Chip(
+          backgroundColor: estadoColor().withAlpha((0.15 * 255).toInt()),
+          label: Text(
+            _estadoLabel(t.estado.toString().split('.').last),
+            style: TextStyle(color: estadoColor(), fontWeight: FontWeight.w600),
+          ),
+        ),
+      ),
     ]);
   }
 
@@ -175,5 +207,13 @@ class _TramiteDataSource extends DataTableSource {
 
   @override
   int get selectedRowCount => 0;
+}
+
+String _estadoLabel(String raw) {
+  if (raw.isEmpty) return '';
+  final lower = raw.toLowerCase();
+  // convert snake_case or uppercase to Capitalized
+  final parts = lower.split(RegExp(r'[_\s]'));
+  return parts.map((p) => '${p[0].toUpperCase()}${p.substring(1)}').join(' ');
 }
 

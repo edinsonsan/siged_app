@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:animate_do/animate_do.dart';
 import '../auth/auth_cubit.dart';
 import '../../domain/models/user.dart';
 import '../../domain/repositories/admin_repository.dart';
@@ -32,39 +33,67 @@ class _AreaManagementViewState extends State<_AreaManagementView> {
       if (state is AreaListLoaded) {
         return Column(
           children: [
-                Padding(
-              padding: const EdgeInsets.all(12.0),
-              child: Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
-                const Text('Administración de Áreas', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
-                Builder(builder: (context) {
-                  final authState = context.read<AuthCubit>().state;
-                  final show = authState is AuthAuthenticated && authState.user.rol == UserRole.admin;
-                  if (!show) return const SizedBox.shrink();
-                  return ElevatedButton(onPressed: () => _showCreateDialog(context), child: const Text('Crear Área'));
-                })
-              ]),
-            ),
-            Expanded(
-              child: ListView.builder(
-                itemCount: state.areas.length,
-                itemBuilder: (context, i) {
-                  final a = state.areas[i];
-                  return ListTile(
-                    title: Text(a.nombre),
-                    subtitle: Text(a.descripcion ?? ''),
-                    trailing: Row(mainAxisSize: MainAxisSize.min, children: [
+            FadeInDown(
+              duration: const Duration(milliseconds: 300),
+              child: Padding(
+                padding: const EdgeInsets.all(12.0),
+                child: Card(
+                  elevation: 2,
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 12.0),
+                    child: Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
+                      Text('Administración de Áreas', style: Theme.of(context).textTheme.headlineMedium),
                       Builder(builder: (context) {
                         final authState = context.read<AuthCubit>().state;
                         final show = authState is AuthAuthenticated && authState.user.rol == UserRole.admin;
                         if (!show) return const SizedBox.shrink();
-                        return Row(children: [
-                          IconButton(icon: const Icon(Icons.edit), onPressed: () => _showEditDialog(context, a)),
-                          IconButton(icon: const Icon(Icons.delete), onPressed: () => _confirmDelete(context, a)),
-                        ]);
+                        return ElevatedButton.icon(
+                          onPressed: () => _showCreateDialog(context),
+                          icon: const Icon(Icons.add_business),
+                          label: const Text('Crear Área'),
+                          style: ElevatedButton.styleFrom(shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8))),
+                        );
                       })
                     ]),
-                  );
-                },
+                  ),
+                ),
+              ),
+            ),
+
+            Expanded(
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 12.0),
+                child: ListView.builder(
+                  itemCount: state.areas.length,
+                  itemBuilder: (context, i) {
+                    final a = state.areas[i];
+                    return FadeInLeft(
+                      duration: Duration(milliseconds: 200 + (i * 30)),
+                      child: Card(
+                        elevation: 2,
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                        margin: const EdgeInsets.symmetric(vertical: 8.0),
+                        child: ListTile(
+                          leading: CircleAvatar(backgroundColor: Theme.of(context).colorScheme.primary.withAlpha((0.08 * 255).toInt()), child: Text(a.id.toString(), style: const TextStyle(fontWeight: FontWeight.bold))),
+                          title: Text(a.nombre, style: const TextStyle(fontWeight: FontWeight.w700)),
+                          subtitle: Text(a.descripcion ?? ''),
+                          trailing: Row(mainAxisSize: MainAxisSize.min, children: [
+                            Builder(builder: (context) {
+                              final authState = context.read<AuthCubit>().state;
+                              final show = authState is AuthAuthenticated && authState.user.rol == UserRole.admin;
+                              if (!show) return const SizedBox.shrink();
+                              return Row(children: [
+                                IconButton(icon: const Icon(Icons.edit, color: Colors.blue), tooltip: 'Editar', onPressed: () => _showEditDialog(context, a)),
+                                IconButton(icon: const Icon(Icons.delete, color: Colors.red), tooltip: 'Eliminar', onPressed: () => _confirmDelete(context, a)),
+                              ]);
+                            })
+                          ]),
+                        ),
+                      ),
+                    );
+                  },
+                ),
               ),
             )
           ],
@@ -82,8 +111,9 @@ class _AreaManagementViewState extends State<_AreaManagementView> {
       builder: (context) => AlertDialog(
         title: const Text('Crear Área'),
         content: Column(mainAxisSize: MainAxisSize.min, children: [
-          TextField(controller: nombre, decoration: const InputDecoration(labelText: 'Nombre')),
-          TextField(controller: descripcion, decoration: const InputDecoration(labelText: 'Descripción')),
+          TextField(controller: nombre, decoration: InputDecoration(labelText: 'Nombre', filled: true, border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)))),
+          const SizedBox(height: 8),
+          TextField(controller: descripcion, decoration: InputDecoration(labelText: 'Descripción', filled: true, border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)))),
         ]),
         actions: [
           TextButton(onPressed: () => Navigator.of(context).pop(), child: const Text('Cancelar')),
@@ -108,8 +138,9 @@ class _AreaManagementViewState extends State<_AreaManagementView> {
       builder: (context) => AlertDialog(
         title: const Text('Editar Área'),
         content: Column(mainAxisSize: MainAxisSize.min, children: [
-          TextField(controller: nombre, decoration: const InputDecoration(labelText: 'Nombre')),
-          TextField(controller: descripcion, decoration: const InputDecoration(labelText: 'Descripción')),
+          TextField(controller: nombre, decoration: InputDecoration(labelText: 'Nombre', filled: true, border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)))),
+          const SizedBox(height: 8),
+          TextField(controller: descripcion, decoration: InputDecoration(labelText: 'Descripción', filled: true, border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)))),
         ]),
         actions: [
           TextButton(onPressed: () => Navigator.of(context).pop(), child: const Text('Cancelar')),

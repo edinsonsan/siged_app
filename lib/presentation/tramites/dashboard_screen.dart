@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:fl_chart/fl_chart.dart';
+import 'package:animate_do/animate_do.dart';
 import 'package:siged_app/domain/models/report_models.dart';
 import '../dashboard/dashboard_cubit.dart';
 // import 'package:intl/intl.dart';
@@ -42,71 +43,117 @@ class _DashboardView extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // --- 1. KPI Cards (Fila Superior) ---
-                GridView.count(
-                  crossAxisCount:
-                      MediaQuery.of(context).size.width > 800 ? 4 : 2,
-                  shrinkWrap: true,
-                  physics: const NeverScrollableScrollPhysics(),
-                  crossAxisSpacing: 16,
-                  mainAxisSpacing: 16,
-                  children: [
-                    _KpiCard(
-                      title: 'Trámites Totales',
-                      value: totalTramites.toString(),
-                    ),
-                    _KpiCard(
-                      title: 'Tiempo Promedio (Días)',
-                      value: state.tiempos.averageTime.toStringAsFixed(1),
-                      subtitle:
-                          'Min: ${state.tiempos.raw['min_days']?.toStringAsFixed(1) ?? 'N/A'} - Max: ${state.tiempos.raw['max_days']?.toStringAsFixed(1) ?? 'N/A'}',
-                      color: Colors.green,
-                    ),
-                    // KPI adicionales usando los datos de AreaCount (ejemplo)
-                    _KpiCard(
-                      title: 'Trámites Pendientes',
-                      value:
-                          state.areaCounts
-                              .fold<int>(
-                                0,
-                                (p, e) => p + e.recibido + e.enProceso,
-                              )
-                              .toString(),
-                      color: Colors.orange,
-                    ),
-                    _KpiCard(
-                      title: 'Trámites Finalizados',
-                      value:
-                          state.areaCounts
-                              .fold<int>(0, (p, e) => p + e.finalizado)
-                              .toString(),
-                      color: Colors.blue,
-                    ),
-                  ],
-                ),
-
-                const SizedBox(height: 32),
-
-                // --- 2. Chart 1: Trámites por Área (Barra Agrupada - por estado) ---
-                // Usamos un Card más grande y lo forzamos a un alto para la visualización.
-                SizedBox(
-                  height: 400,
-                  child: _ChartCard(
-                    title: 'Trámites por Área y Estado',
-                    areaCounts: state.areaCounts,
+                // Wrap KPIs in a staggered animation
+                FadeInDown(
+                  duration: const Duration(milliseconds: 400),
+                  child: GridView.count(
+                    crossAxisCount:
+                        MediaQuery.of(context).size.width > 800 ? 4 : 2,
+                    shrinkWrap: true,
+                    physics: const NeverScrollableScrollPhysics(),
+                    crossAxisSpacing: 16,
+                    mainAxisSpacing: 16,
+                    children: [
+                      _KpiCard(
+                        title: 'Trámites Totales',
+                        value: totalTramites.toString(),
+                        icon: Icons.folder_open,
+                      ),
+                      _KpiCard(
+                        title: 'Tiempo Promedio (Días)',
+                        value: state.tiempos.averageTime.toStringAsFixed(1),
+                        subtitle:
+                            'Min: ${state.tiempos.raw['min_days']?.toStringAsFixed(1) ?? 'N/A'} - Max: ${state.tiempos.raw['max_days']?.toStringAsFixed(1) ?? 'N/A'}',
+                        color: Colors.green,
+                        icon: Icons.access_time_filled,
+                      ),
+                      // KPI adicionales usando los datos de AreaCount (ejemplo)
+                      _KpiCard(
+                        title: 'Trámites Pendientes',
+                        value:
+                            state.areaCounts
+                                .fold<int>(
+                                  0,
+                                  (p, e) => p + e.recibido + e.enProceso,
+                                )
+                                .toString(),
+                        color: Colors.orange,
+                        icon: Icons.pending_actions,
+                      ),
+                      _KpiCard(
+                        title: 'Trámites Finalizados',
+                        value:
+                            state.areaCounts
+                                .fold<int>(0, (p, e) => p + e.finalizado)
+                                .toString(),
+                        color: Colors.blue,
+                        icon: Icons.check_circle_outline,
+                      ),
+                    ],
                   ),
                 ),
 
-                const SizedBox(height: 32),
+                const SizedBox(height: 28),
 
-                // --- 3. Chart 2: Actividad por Usuario (Barra Apilada) ---
-                SizedBox(
-                  height: 400,
-                  child: _UserActivityChart(
-                    userActivity: state.userActivity,
-                    maxY: (maxUsers.toDouble() * 1.2).clamp(
-                      10.0,
-                      double.infinity,
+                // Chart 1 with elevation and animation
+                FadeInUp(
+                  duration: const Duration(milliseconds: 450),
+                  delay: const Duration(milliseconds: 80),
+                  child: Card(
+                    elevation: 6,
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                    child: Padding(
+                      padding: const EdgeInsets.all(12.0),
+                      child: SizedBox(
+                        height: 400,
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text('Trámites por Área y Estado', style: Theme.of(context).textTheme.headlineSmall),
+                            const SizedBox(height: 12),
+                            Expanded(
+                              child: _ChartCard(
+                                title: '', // title moved out to the card header
+                                areaCounts: state.areaCounts,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+
+                const SizedBox(height: 28),
+
+                // Chart 2 with elevation and animation
+                FadeInUp(
+                  duration: const Duration(milliseconds: 500),
+                  delay: const Duration(milliseconds: 160),
+                  child: Card(
+                    elevation: 6,
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                    child: Padding(
+                      padding: const EdgeInsets.all(12.0),
+                      child: SizedBox(
+                        height: 400,
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text('Actividad por Usuario', style: Theme.of(context).textTheme.headlineSmall),
+                            const SizedBox(height: 12),
+                            Expanded(
+                              child: _UserActivityChart(
+                                userActivity: state.userActivity,
+                                maxY: (maxUsers.toDouble() * 1.2).clamp(
+                                  10.0,
+                                  double.infinity,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
                     ),
                   ),
                 ),
@@ -127,45 +174,67 @@ class _KpiCard extends StatelessWidget {
   final String value;
   final String? subtitle;
   final Color? color;
+  final IconData? icon;
 
   const _KpiCard({
     required this.title,
     required this.value,
     this.subtitle,
     this.color,
+    this.icon,
   });
 
   @override
   Widget build(BuildContext context) {
+    final baseColor = color ?? Theme.of(context).primaryColor;
     return Card(
-      color:
-          color != null
-              ? Color.lerp(color, Theme.of(context).cardColor, 0.9)
-              : Theme.of(context).cardColor,
+      elevation: 4,
+        shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(12),
+        side: BorderSide(color: baseColor.withAlpha((0.12 * 255).toInt())),
+      ),
+      color: Color.lerp(baseColor, Theme.of(context).cardColor, 0.90),
       child: Padding(
         padding: const EdgeInsets.all(16.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          mainAxisAlignment: MainAxisAlignment.center,
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.center,
           children: [
-            Text(
-              title,
-              style: Theme.of(
-                context,
-              ).textTheme.bodySmall!.copyWith(color: color ?? Colors.grey),
-            ),
-            const SizedBox(height: 8),
-            Text(
-              value,
-              style: Theme.of(context).textTheme.headlineMedium!.copyWith(
-                color: color ?? Theme.of(context).primaryColor,
-                fontWeight: FontWeight.bold,
+            if (icon != null)
+              Container(
+                padding: const EdgeInsets.all(10),
+                  decoration: BoxDecoration(
+                  color: baseColor.withAlpha((0.12 * 255).toInt()),
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: Icon(icon, color: baseColor, size: 28),
+              ),
+            if (icon != null) const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Text(
+                    title,
+                    style: Theme.of(
+                      context,
+                    ).textTheme.bodySmall!.copyWith(color: baseColor.withAlpha((0.95 * 255).toInt())),
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    value,
+                    style: Theme.of(context).textTheme.headlineMedium!.copyWith(
+                      color: baseColor,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  if (subtitle != null) ...[
+                    const SizedBox(height: 4),
+                    Text(subtitle!, style: Theme.of(context).textTheme.bodySmall),
+                  ],
+                ],
               ),
             ),
-            if (subtitle != null) ...[
-              const SizedBox(height: 4),
-              Text(subtitle!, style: Theme.of(context).textTheme.bodySmall),
-            ],
           ],
         ),
       ),
