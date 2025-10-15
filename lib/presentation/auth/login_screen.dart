@@ -89,9 +89,7 @@ class _LoginScreenState extends State<LoginScreen>
                   Expanded(
                     flex: (_kLeftPanelFraction * 100).toInt(),
                     child: Container(
-                      color: Theme.of(
-                        context,
-                      ).colorScheme.primary.withOpacity(0.06),
+                      color: Theme.of(context).colorScheme.primary.withAlpha((0.06 * 255).toInt()),
                       child: Center(
                         child: Padding(
                           padding: const EdgeInsets.all(32.0),

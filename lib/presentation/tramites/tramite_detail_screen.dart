@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'package:animate_do/animate_do.dart';
+import 'package:intl/intl.dart';
 import '../auth/auth_cubit.dart';
 import 'package:timeline_tile/timeline_tile.dart';
 import '../../domain/models/user.dart';
@@ -101,94 +103,155 @@ class _TramiteDetailScreenState extends State<TramiteDetailScreen> {
   }
 
   Widget _buildDetail(BuildContext context, DetailTramiteLoaded state) {
-    return SingleChildScrollView(
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text('Asunto: ${state.tramite.asunto}', style: Theme.of(context).textTheme.titleLarge),
-          const SizedBox(height: 8),
-          Text('Remitente: ${state.tramite.remitenteNombre}'),
-          const SizedBox(height: 8),
-          Text('Área actual: ${state.tramite.areaActual ?? 'N/A'}'),
-          const SizedBox(height: 16),
-          Text('Historial', style: Theme.of(context).textTheme.titleMedium),
-          const SizedBox(height: 8),
-          ...state.historial.map((h) => TimelineTile(
-                alignment: TimelineAlign.start,
-                isFirst: state.historial.first == h,
-                isLast: state.historial.last == h,
-                indicatorStyle: const IndicatorStyle(width: 20, color: Colors.blue),
-                afterLineStyle: const LineStyle(color: Colors.grey),
-                endChild: Padding(
-                  padding: const EdgeInsets.all(8.0),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        '${h.usuario != null ? '${h.usuario!.nombre} ${h.usuario!.apellido}' : 'Sistema'} - ${h.fecha}',
-                        style: const TextStyle(fontWeight: FontWeight.bold),
+    final df = DateFormat.yMMMMd(Localizations.localeOf(context).toString());
+    Color statusColor(TramiteEstado e) {
+      if (e == TramiteEstado.finalizado) return Colors.green.shade600;
+      if (e == TramiteEstado.enProceso) return Colors.orange.shade700;
+      if (e == TramiteEstado.observado) return Colors.red.shade600;
+      return Colors.blue.shade600; // recibido or fallback
+    }
+
+    return FadeInUp(
+      duration: const Duration(milliseconds: 350),
+      child: SingleChildScrollView(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Header card with key details
+            Card(
+              elevation: 2,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 14.0),
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text('CUT ${state.tramite.cut}', style: Theme.of(context).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.bold)),
+                          const SizedBox(height: 6),
+                          Text(state.tramite.asunto, style: Theme.of(context).textTheme.titleMedium),
+                          const SizedBox(height: 8),
+                          Row(children: [
+                            Icon(Icons.person, size: 16, color: Colors.grey.shade700),
+                            const SizedBox(width: 6),
+                            Text(state.tramite.remitenteNombre, style: Theme.of(context).textTheme.bodyMedium),
+                            const SizedBox(width: 12),
+                            Icon(Icons.business, size: 16, color: Colors.grey.shade700),
+                            const SizedBox(width: 6),
+                            Text(state.tramite.areaActual?.nombre ?? 'N/A', style: Theme.of(context).textTheme.bodyMedium),
+                          ])
+                        ],
                       ),
-                      const SizedBox(height: 4),
-                      Text(h.comentario),
-                    ],
-                  ),
+                    ),
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.end,
+                      children: [
+                        Chip(
+                          backgroundColor: statusColor(state.tramite.estado),
+                          label: Text(state.tramite.estado.toString().split('.').last.toUpperCase(), style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w700)),
+                        ),
+                        const SizedBox(height: 8),
+                        Text('Creado: ${df.format(state.tramite.fechaCreacion)}', style: Theme.of(context).textTheme.bodySmall),
+                      ],
+                    )
+                  ],
                 ),
-              )),
-          const SizedBox(height: 16),
-          Text('Adjuntos', style: Theme.of(context).textTheme.titleMedium),
-          const SizedBox(height: 8),
-          // --- ¡NUEVA LÓGICA DE ADJUNTOS! ---
-        if (state.tramite.documentosAdjuntos.isEmpty)
-          const Text('No hay documentos adjuntos para este trámite.')
-        else
-          ...state.tramite.documentosAdjuntos.map((doc) => Padding(
-            padding: const EdgeInsets.only(bottom: 4.0),
-            child: ListTile(
-              // Usamos el tipo para el icono y el nombre del archivo si es posible
-              leading: Icon(
-                doc.tipo.toLowerCase().contains('pdf') 
-                ? Icons.picture_as_pdf 
-                : Icons.insert_drive_file,
               ),
-              title: Text(
-                'Documento (${doc.tipo})',
-                style: const TextStyle(decoration: TextDecoration.underline, color: Colors.blue),
-              ),
-              subtitle: Text(
-                'Subido: ${doc.fechaSubida.toLocal().toString().split(' ')[0]}',
-                style: Theme.of(context).textTheme.bodySmall,
-              ),
-              onTap: () => _launchUrl(doc.urlArchivo),
-              dense: true,
             ),
-          )),
-          const SizedBox(height: 24),
-          // Show action buttons only for ADMIN and AREA roles
-          Builder(builder: (context) {
-            final authState = context.read<AuthCubit>().state;
-            final canAct = authState is AuthAuthenticated && (authState.user.rol == UserRole.admin || authState.user.rol == UserRole.area);
-            if (!canAct) return const SizedBox.shrink();
-            return Row(
-              children: [
-                ElevatedButton(
-                  onPressed: () => _showDerivarDialog(context, state.tramite),
-                  child: const Text('Derivar'),
+            const SizedBox(height: 12),
+
+            // Historial
+            FadeInLeft(duration: const Duration(milliseconds: 300), child: Padding(padding: const EdgeInsets.symmetric(vertical: 6.0), child: Text('Historial', style: Theme.of(context).textTheme.titleMedium))),
+            Card(
+              elevation: 1,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+              child: Padding(
+                padding: const EdgeInsets.all(8.0),
+                child: Column(
+                  children: state.historial.map((h) {
+                    final isFirst = state.historial.first == h;
+                    final isLast = state.historial.last == h;
+                    final parsedDate = DateTime.tryParse(h.fecha) ?? DateTime.now();
+                    return TimelineTile(
+                      alignment: TimelineAlign.start,
+                      isFirst: isFirst,
+                      isLast: isLast,
+                      indicatorStyle: IndicatorStyle(
+                        width: 24,
+                        color: isLast ? statusColor(state.tramite.estado) : Colors.grey.shade400,
+                        indicator: Container(
+                          decoration: BoxDecoration(shape: BoxShape.circle, color: isLast ? statusColor(state.tramite.estado) : Colors.white, border: Border.all(color: isLast ? statusColor(state.tramite.estado) : Colors.grey.shade400, width: 2)),
+                          child: Center(child: Icon(isLast ? Icons.check : Icons.circle, size: isLast ? 16 : 8, color: isLast ? Colors.white : Colors.grey.shade400)),
+                        ),
+                      ),
+                      afterLineStyle: LineStyle(color: Colors.grey.shade300, thickness: 2),
+                      endChild: Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 12.0, vertical: 8.0),
+                        child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                          Text('${h.usuario != null ? '${h.usuario!.nombre} ${h.usuario!.apellido}' : 'Sistema'} • ${DateFormat.yMMMd().add_jm().format(parsedDate)}', style: const TextStyle(fontWeight: FontWeight.bold)),
+                          const SizedBox(height: 6),
+                          Text(h.comentario),
+                        ]),
+                      ),
+                    );
+                  }).toList(),
                 ),
-                const SizedBox(width: 8),
-                ElevatedButton(
-                  onPressed: () => _confirmFinalizar(context, state.tramite),
-                  child: const Text('Finalizar'),
-                ),
-                const SizedBox(width: 8),
-                ElevatedButton(
-                  onPressed: () => _showObservarDialog(context, state.tramite),
-                  child: const Text('Observar'),
-                ),
-              ],
-            );
-          })
-        ],
+              ),
+            ),
+            const SizedBox(height: 12),
+
+            // Adjuntos
+            FadeInLeft(duration: const Duration(milliseconds: 300), child: Padding(padding: const EdgeInsets.symmetric(vertical: 6.0), child: Text('Adjuntos', style: Theme.of(context).textTheme.titleMedium))),
+            Card(
+              elevation: 1,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+              child: Padding(
+                padding: const EdgeInsets.all(8.0),
+                child: state.tramite.documentosAdjuntos.isEmpty
+                    ? Padding(padding: const EdgeInsets.all(12.0), child: Text('No hay documentos adjuntos para este trámite.', style: Theme.of(context).textTheme.bodyMedium))
+                    : Column(children: state.tramite.documentosAdjuntos.map((doc) => _attachmentItem(doc: doc, onOpen: () => _launchUrl(doc.urlArchivo))).toList()),
+              ),
+            ),
+
+            const SizedBox(height: 18),
+
+            // Actions bar
+            Builder(builder: (context) {
+              final authState = context.read<AuthCubit>().state;
+              final canAct = authState is AuthAuthenticated && (authState.user.rol == UserRole.admin || authState.user.rol == UserRole.area);
+              if (!canAct) return const SizedBox.shrink();
+              return Row(
+                children: [
+                  ElevatedButton.icon(onPressed: () => _showDerivarDialog(context, state.tramite), icon: const Icon(Icons.send), label: const Text('Derivar')),
+                  const SizedBox(width: 8),
+                  ElevatedButton.icon(onPressed: () => _confirmFinalizar(context, state.tramite), icon: const Icon(Icons.check_circle), label: const Text('Finalizar')),
+                  const SizedBox(width: 8),
+                  TextButton.icon(onPressed: () => _showObservarDialog(context, state.tramite), icon: const Icon(Icons.visibility), label: const Text('Observar')),
+                ],
+              );
+            })
+          ],
+        ),
       ),
+    );
+  }
+
+  Widget _attachmentItem({required dynamic doc, required VoidCallback onOpen}) {
+    // doc is a DocumentoAdjunto-like object; keep dynamic to avoid tight coupling
+    final title = (doc.tipo != null) ? 'Documento (${doc.tipo})' : 'Adjunto';
+    final uploaded = doc.fechaSubida != null ? DateTime.tryParse(doc.fechaSubida.toString()) : null;
+    final subtitle = uploaded != null ? DateFormat.yMMMd().format(uploaded) : null;
+    final isPdf = (doc.tipo ?? '').toString().toLowerCase().contains('pdf');
+    return ListTile(
+      leading: CircleAvatar(backgroundColor: isPdf ? Colors.red.shade100 : Colors.blue.shade50, child: Icon(isPdf ? Icons.picture_as_pdf : Icons.insert_drive_file, color: isPdf ? Colors.red : Colors.blue)),
+      title: Text(title, style: const TextStyle(decoration: TextDecoration.underline, color: Colors.blue)),
+      subtitle: subtitle != null ? Text('Subido: $subtitle', style: Theme.of(context).textTheme.bodySmall) : null,
+      trailing: IconButton(icon: const Icon(Icons.open_in_new), onPressed: onOpen),
+      dense: true,
+      onTap: onOpen,
     );
   }
 
