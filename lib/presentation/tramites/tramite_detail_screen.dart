@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:url_launcher/url_launcher.dart';
 import '../auth/auth_cubit.dart';
 import 'package:timeline_tile/timeline_tile.dart';
 import '../../domain/models/user.dart';
@@ -136,7 +137,31 @@ class _TramiteDetailScreenState extends State<TramiteDetailScreen> {
           const SizedBox(height: 16),
           Text('Adjuntos', style: Theme.of(context).textTheme.titleMedium),
           const SizedBox(height: 8),
-          Text('No hay adjuntos implementados aún.'),
+          // --- ¡NUEVA LÓGICA DE ADJUNTOS! ---
+        if (state.tramite.documentosAdjuntos.isEmpty)
+          const Text('No hay documentos adjuntos para este trámite.')
+        else
+          ...state.tramite.documentosAdjuntos.map((doc) => Padding(
+            padding: const EdgeInsets.only(bottom: 4.0),
+            child: ListTile(
+              // Usamos el tipo para el icono y el nombre del archivo si es posible
+              leading: Icon(
+                doc.tipo.toLowerCase().contains('pdf') 
+                ? Icons.picture_as_pdf 
+                : Icons.insert_drive_file,
+              ),
+              title: Text(
+                'Documento (${doc.tipo})',
+                style: const TextStyle(decoration: TextDecoration.underline, color: Colors.blue),
+              ),
+              subtitle: Text(
+                'Subido: ${doc.fechaSubida.toLocal().toString().split(' ')[0]}',
+                style: Theme.of(context).textTheme.bodySmall,
+              ),
+              onTap: () => _launchUrl(doc.urlArchivo),
+              dense: true,
+            ),
+          )),
           const SizedBox(height: 24),
           // Show action buttons only for ADMIN and AREA roles
           Builder(builder: (context) {
@@ -255,5 +280,15 @@ class _TramiteDetailScreenState extends State<TramiteDetailScreen> {
         ],
       ),
     );
+  }
+
+  Future<void> _launchUrl(String url) async {
+    final uri = Uri.parse(url);
+    if (!await launchUrl(uri, mode: LaunchMode.externalApplication)) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('No se pudo abrir el documento.')),
+      );
+    }
   }
 }
