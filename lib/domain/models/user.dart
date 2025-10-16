@@ -1,7 +1,7 @@
 import 'package:equatable/equatable.dart';
 import 'area.dart';
 
-enum UserRole { admin, mesaPartes, area, auditor }
+enum UserRole { ADMIN, MESA_PARTES, AREA, AUDITOR }
 
 /// Immutable User model
 class User extends Equatable {
@@ -29,16 +29,16 @@ class User extends Equatable {
     UserRole parseRole(String value) {
       switch (value) {
         case 'ADMIN':
-          return UserRole.admin;
+          return UserRole.ADMIN;
         case 'MESA_PARTES':
-          return UserRole.mesaPartes;
+          return UserRole.MESA_PARTES;
         case 'AREA':
-          return UserRole.area;
+          return UserRole.AREA;
         case 'AUDITOR':
-          return UserRole.auditor;
+          return UserRole.AUDITOR;
         default:
           // Fallback: default to area
-          return UserRole.area;
+          return UserRole.AREA;
       }
     }
 
@@ -57,13 +57,13 @@ class User extends Equatable {
   Map<String, dynamic> toJson() {
     String roleToString(UserRole r) {
       switch (r) {
-        case UserRole.admin:
+        case UserRole.ADMIN:
           return 'ADMIN';
-        case UserRole.mesaPartes:
+        case UserRole.MESA_PARTES:
           return 'MESA_PARTES';
-        case UserRole.area:
+        case UserRole.AREA:
           return 'AREA';
-        case UserRole.auditor:
+        case UserRole.AUDITOR:
           return 'AUDITOR';
       }
     }

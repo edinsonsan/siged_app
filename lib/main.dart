@@ -105,7 +105,7 @@ class MainApp extends StatelessWidget {
 
           // RBAC: Protect admin routes - only allow ADMIN role to access /home/admin/* and /home/users
           final role = authState.user.rol;
-          final isAdmin = role == UserRole.admin;
+          final isAdmin = role == UserRole.ADMIN;
           final isAdminRoute = dest != null && (dest.startsWith('/home/admin') || dest == '/home/users');
           if (isAdminRoute && !isAdmin) return '/home/dashboard';
 

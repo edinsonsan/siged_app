@@ -36,6 +36,7 @@ class AdminRepository {
   }
 
   Future<User> updateUser(num id, Map<String, dynamic> dto) async {
+    print('Updating user $id with data: $dto'); // Debug log
     final res = await http.patch('/users/\$id'.replaceAll('\$id', id.toString()), data: dto);
     final data = res.data;
     if (data is Map<String, dynamic>) return User.fromJson(data);

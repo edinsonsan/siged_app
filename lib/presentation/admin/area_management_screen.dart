@@ -46,7 +46,7 @@ class _AreaManagementViewState extends State<_AreaManagementView> {
                       Text('Administración de Áreas', style: Theme.of(context).textTheme.headlineMedium),
                       Builder(builder: (context) {
                         final authState = context.read<AuthCubit>().state;
-                        final show = authState is AuthAuthenticated && authState.user.rol == UserRole.admin;
+                        final show = authState is AuthAuthenticated && authState.user.rol == UserRole.ADMIN;
                         if (!show) return const SizedBox.shrink();
                         return ElevatedButton.icon(
                           onPressed: () => _showCreateDialog(context),
@@ -81,7 +81,7 @@ class _AreaManagementViewState extends State<_AreaManagementView> {
                           trailing: Row(mainAxisSize: MainAxisSize.min, children: [
                             Builder(builder: (context) {
                               final authState = context.read<AuthCubit>().state;
-                              final show = authState is AuthAuthenticated && authState.user.rol == UserRole.admin;
+                              final show = authState is AuthAuthenticated && authState.user.rol == UserRole.ADMIN;
                               if (!show) return const SizedBox.shrink();
                               return Row(children: [
                                 IconButton(icon: const Icon(Icons.edit, color: Colors.blue), tooltip: 'Editar', onPressed: () => _showEditDialog(context, a)),
@@ -103,12 +103,13 @@ class _AreaManagementViewState extends State<_AreaManagementView> {
     });
   }
 
-  void _showCreateDialog(BuildContext context) {
+  void _showCreateDialog(BuildContext screenContext) {
     final nombre = TextEditingController();
     final descripcion = TextEditingController();
+
     showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
+      context: screenContext, // Usamos el contexto que sí tiene el Cubit como padre
+      builder: (dialogContext) => AlertDialog( // El builder recibe un nuevo contexto (dialogContext)
         title: const Text('Crear Área'),
         content: Column(mainAxisSize: MainAxisSize.min, children: [
           TextField(controller: nombre, decoration: InputDecoration(labelText: 'Nombre', filled: true, border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)))),
@@ -116,12 +117,17 @@ class _AreaManagementViewState extends State<_AreaManagementView> {
           TextField(controller: descripcion, decoration: InputDecoration(labelText: 'Descripción', filled: true, border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)))),
         ]),
         actions: [
-          TextButton(onPressed: () => Navigator.of(context).pop(), child: const Text('Cancelar')),
+          TextButton(onPressed: () => Navigator.of(dialogContext).pop(), child: const Text('Cancelar')),
           ElevatedButton(
+            // **AQUÍ ESTÁ LA CORRECCIÓN CLAVE**
+            // Usamos el 'screenContext' original para llamar a read<Cubit>
             onPressed: () {
               final dto = {'nombre': nombre.text.trim(), 'descripcion': descripcion.text.trim()};
-              context.read<AreaListCubit>().createArea(dto);
-              Navigator.of(context).pop();
+              
+              // Usamos screenContext para acceder al Cubit que está más arriba en el árbol.
+              screenContext.read<AreaListCubit>().createArea(dto);
+              
+              Navigator.of(dialogContext).pop();
             },
             child: const Text('Crear'),
           )
@@ -130,12 +136,13 @@ class _AreaManagementViewState extends State<_AreaManagementView> {
     );
   }
 
-  void _showEditDialog(BuildContext context, area) {
+  void _showEditDialog(BuildContext screenContext, area) {
     final nombre = TextEditingController(text: area.nombre);
     final descripcion = TextEditingController(text: area.descripcion ?? '');
+
     showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
+      context: screenContext, // Usamos el contexto padre para abrir el diálogo
+      builder: (dialogContext) => AlertDialog( // El builder genera un nuevo contexto: dialogContext
         title: const Text('Editar Área'),
         content: Column(mainAxisSize: MainAxisSize.min, children: [
           TextField(controller: nombre, decoration: InputDecoration(labelText: 'Nombre', filled: true, border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)))),
@@ -143,12 +150,14 @@ class _AreaManagementViewState extends State<_AreaManagementView> {
           TextField(controller: descripcion, decoration: InputDecoration(labelText: 'Descripción', filled: true, border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)))),
         ]),
         actions: [
-          TextButton(onPressed: () => Navigator.of(context).pop(), child: const Text('Cancelar')),
+          TextButton(onPressed: () => Navigator.of(dialogContext).pop(), child: const Text('Cancelar')),
           ElevatedButton(
             onPressed: () {
               final dto = {'nombre': nombre.text.trim(), 'descripcion': descripcion.text.trim()};
-              context.read<AreaListCubit>().updateArea(area.id, dto);
-              Navigator.of(context).pop();
+              
+              screenContext.read<AreaListCubit>().updateArea(area.id, dto);
+              
+              Navigator.of(dialogContext).pop(); // Cerramos con el context del diálogo
             },
             child: const Text('Guardar'),
           )
@@ -157,18 +166,20 @@ class _AreaManagementViewState extends State<_AreaManagementView> {
     );
   }
 
-  void _confirmDelete(BuildContext context, area) {
+  void _confirmDelete(BuildContext screenContext, area) {
     showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
+      context: screenContext, // Usamos el contexto padre para abrir el diálogo
+      builder: (dialogContext) => AlertDialog( // El builder genera un nuevo contexto: dialogContext
         title: const Text('Eliminar Área'),
         content: Text('¿Eliminar área ${area.nombre}?'),
         actions: [
-          TextButton(onPressed: () => Navigator.of(context).pop(), child: const Text('Cancelar')),
+          TextButton(onPressed: () => Navigator.of(dialogContext).pop(), child: const Text('Cancelar')),
           ElevatedButton(
             onPressed: () {
-              context.read<AreaListCubit>().deleteArea(area.id);
-              Navigator.of(context).pop();
+              // **CORRECCIÓN CLAVE:** Usamos screenContext para acceder al Cubit.
+              screenContext.read<AreaListCubit>().deleteArea(area.id);
+              
+              Navigator.of(dialogContext).pop(); // Cerramos con el context del diálogo
             },
             child: const Text('Eliminar'),
           )

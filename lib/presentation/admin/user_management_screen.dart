@@ -3,7 +3,9 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:animate_do/animate_do.dart';
 import '../auth/auth_cubit.dart';
 import '../../domain/models/user.dart';
+import '../../domain/models/area.dart';
 import '../../domain/repositories/admin_repository.dart';
+import '../../widgets/area_dropdown_field.dart';
 import 'user_list_cubit.dart';
 
 class UserManagementScreen extends StatelessWidget {
@@ -30,151 +32,177 @@ class _UserManagementViewState extends State<_UserManagementView> {
 
   @override
   Widget build(BuildContext context) {
-    return BlocBuilder<UserListCubit, UserListState>(
-      builder: (context, state) {
-        if (state is UserListLoading || state is UserListInitial) {
-          return const Center(child: CircularProgressIndicator());
-        }
+    return BlocListener<UserListCubit, UserListState>(
+      listener: (context, state) {
         if (state is UserListError) {
-          return Center(child: Text('Error: ${state.message}'));
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(state.message),
+              backgroundColor: Colors.red.shade700,
+            ),
+          );
         }
-        if (state is UserListLoaded) {
-          final source = _UserDataSource(state.users, context);
-          return Column(
-            children: [
-              // Header with title and create button
-              FadeInDown(
-                duration: const Duration(milliseconds: 300),
-                child: Padding(
-                  padding: const EdgeInsets.all(12.0),
-                  child: Card(
-                    elevation: 2,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(10),
-                    ),
-                    child: Padding(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 16.0,
-                        vertical: 12.0,
-                      ),
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Text(
-                            'Administración de Usuarios',
-                            style: Theme.of(context).textTheme.headlineMedium,
-                          ),
-                          Builder(
-                            builder: (context) {
-                              final authState = context.read<AuthCubit>().state;
-                              final show =
-                                  authState is AuthAuthenticated &&
-                                  authState.user.rol == UserRole.admin;
-                              if (!show) return const SizedBox.shrink();
-                              return ElevatedButton.icon(
-                                style: ElevatedButton.styleFrom(
-                                  shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(8),
-                                  ),
-                                  padding: const EdgeInsets.symmetric(
-                                    horizontal: 14,
-                                    vertical: 12,
-                                  ),
-                                ),
-                                onPressed: () => _showCreateDialog(context),
-                                icon: const Icon(Icons.person_add),
-                                label: const Text('Crear usuario'),
-                              );
-                            },
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                ),
-              ),
-
-              // Table card
-              Expanded(
-                child: FadeInUp(
-                  duration: const Duration(milliseconds: 350),
+        if (state is UserListSuccess) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(state.message),
+              backgroundColor: Colors.green,
+            ),
+          );
+        }
+      },
+      child: BlocBuilder<UserListCubit, UserListState>(
+        builder: (context, state) {
+          if (state is UserListLoading ||
+              state is UserListInitial ||
+              state is UserListActionInProgress) {
+            return const Center(child: CircularProgressIndicator());
+          }
+          if (state is UserListError) {
+            if (context.read<UserListCubit>().state is! UserListLoaded) {
+              return Center(child: Text('Error: ${state.message}'));
+            }
+          }
+          if (state is UserListLoaded) {
+            final source = _UserDataSource(state.users, context);
+            return Column(
+              children: [
+                // Header with title and create button
+                FadeInDown(
+                  duration: const Duration(milliseconds: 300),
                   child: Padding(
                     padding: const EdgeInsets.all(12.0),
                     child: Card(
-                      elevation: 4,
+                      elevation: 2,
                       shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
+                        borderRadius: BorderRadius.circular(10),
                       ),
-                      child: SingleChildScrollView(
-                        child: PaginatedDataTable(
-                          header: const Text('Usuarios'),
-                          columns: const [
-                            DataColumn(
-                              label: Text(
-                                'ID',
-                                style: TextStyle(fontWeight: FontWeight.bold),
-                              ),
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 16.0,
+                          vertical: 12.0,
+                        ),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Text(
+                              'Administración de Usuarios',
+                              style: Theme.of(context).textTheme.headlineMedium,
                             ),
-                            DataColumn(
-                              label: Text(
-                                'Nombre',
-                                style: TextStyle(fontWeight: FontWeight.bold),
-                              ),
-                            ),
-                            DataColumn(
-                              label: Text(
-                                'Email',
-                                style: TextStyle(fontWeight: FontWeight.bold),
-                              ),
-                            ),
-                            DataColumn(
-                              label: Text(
-                                'Rol',
-                                style: TextStyle(fontWeight: FontWeight.bold),
-                              ),
-                            ),
-                            DataColumn(
-                              label: Text(
-                                'Área',
-                                style: TextStyle(fontWeight: FontWeight.bold),
-                              ),
-                            ),
-                            DataColumn(
-                              label: Text(
-                                'Acciones',
-                                style: TextStyle(fontWeight: FontWeight.bold),
-                              ),
+                            Builder(
+                              builder: (context) {
+                                final authState =
+                                    context.read<AuthCubit>().state;
+                                final show =
+                                    authState is AuthAuthenticated &&
+                                    authState.user.rol == UserRole.ADMIN;
+                                if (!show) return const SizedBox.shrink();
+                                return ElevatedButton.icon(
+                                  style: ElevatedButton.styleFrom(
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(8),
+                                    ),
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 14,
+                                      vertical: 12,
+                                    ),
+                                  ),
+                                  onPressed: () => _showCreateDialog(context),
+                                  icon: const Icon(Icons.person_add),
+                                  label: const Text('Crear usuario'),
+                                );
+                              },
                             ),
                           ],
-                          source: source,
-                          rowsPerPage: _rowsPerPage,
-                          onRowsPerPageChanged: (r) {
-                            if (r != null) setState(() => _rowsPerPage = r);
-                          },
                         ),
                       ),
                     ),
                   ),
                 ),
-              ),
-            ],
-          );
-        }
-        return const SizedBox.shrink();
-      },
+
+                // Table card
+                Expanded(
+                  child: FadeInUp(
+                    duration: const Duration(milliseconds: 350),
+                    child: Padding(
+                      padding: const EdgeInsets.all(12.0),
+                      child: Card(
+                        elevation: 4,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: SingleChildScrollView(
+                          child: PaginatedDataTable(
+                            header: const Text('Usuarios'),
+                            columns: const [
+                              DataColumn(
+                                label: Text(
+                                  'ID',
+                                  style: TextStyle(fontWeight: FontWeight.bold),
+                                ),
+                              ),
+                              DataColumn(
+                                label: Text(
+                                  'Nombre',
+                                  style: TextStyle(fontWeight: FontWeight.bold),
+                                ),
+                              ),
+                              DataColumn(
+                                label: Text(
+                                  'Email',
+                                  style: TextStyle(fontWeight: FontWeight.bold),
+                                ),
+                              ),
+                              DataColumn(
+                                label: Text(
+                                  'Rol',
+                                  style: TextStyle(fontWeight: FontWeight.bold),
+                                ),
+                              ),
+                              DataColumn(
+                                label: Text(
+                                  'Área',
+                                  style: TextStyle(fontWeight: FontWeight.bold),
+                                ),
+                              ),
+                              DataColumn(
+                                label: Text(
+                                  'Acciones',
+                                  style: TextStyle(fontWeight: FontWeight.bold),
+                                ),
+                              ),
+                            ],
+                            source: source,
+                            rowsPerPage: _rowsPerPage,
+                            onRowsPerPageChanged: (r) {
+                              if (r != null) setState(() => _rowsPerPage = r);
+                            },
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            );
+          }
+          return const SizedBox.shrink();
+        },
+      ),
     );
   }
 
-  void _showCreateDialog(BuildContext context) {
+  void _showCreateDialog(BuildContext screenContext) {
     final nombre = TextEditingController();
     final apellido = TextEditingController();
     final email = TextEditingController();
-    final rol = TextEditingController();
-    final areaId = TextEditingController();
+    // final rol = TextEditingController();
+    UserRole selectedRole = UserRole.AREA;
+    Area? selectedArea;
     showDialog(
-      context: context,
+      context: screenContext,
       builder:
-          (context) => AlertDialog(
+          (dialogContext) => AlertDialog(
             title: const Text('Crear usuario'),
             content: SingleChildScrollView(
               child: Column(
@@ -212,34 +240,43 @@ class _UserManagementViewState extends State<_UserManagementView> {
                     ),
                   ),
                   const SizedBox(height: 8),
-                  TextField(
-                    controller: rol,
+                  DropdownButtonFormField<UserRole>(
+                    value: selectedRole, // El valor inicial es AREA
                     decoration: InputDecoration(
-                      labelText: 'Rol (ADMIN|MESA_PARTES|AREA|AUDITOR)',
+                      labelText: 'Rol',
                       filled: true,
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(8),
                       ),
                     ),
+                    items:
+                        UserRole.values.map((role) {
+                          return DropdownMenuItem(
+                            value: role,
+                            // Mostrar el rol con la primera letra en mayúscula (ej: Admin)
+                            child: Text(
+                              role.toString().split('.').last[0].toUpperCase() +
+                                  role.toString().split('.').last.substring(1),
+                            ),
+                          );
+                        }).toList(),
+                    onChanged: (role) {
+                      if (role != null) {
+                        selectedRole = role; // Actualiza el rol seleccionado
+                      }
+                    },
                   ),
                   const SizedBox(height: 8),
-                  TextField(
-                    controller: areaId,
-                    decoration: InputDecoration(
-                      labelText: 'Area ID (opcional)',
-                      filled: true,
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                    ),
-                    keyboardType: TextInputType.number,
+                  AreaDropdownField(
+                    isOptional: true,
+                    onChanged: (a) => selectedArea = a,
                   ),
                 ],
               ),
             ),
             actions: [
               TextButton(
-                onPressed: () => Navigator.of(context).pop(),
+                onPressed: () => Navigator.of(dialogContext).pop(),
                 child: const Text('Cancelar'),
               ),
               ElevatedButton(
@@ -248,14 +285,13 @@ class _UserManagementViewState extends State<_UserManagementView> {
                     'nombre': nombre.text.trim(),
                     'apellido': apellido.text.trim(),
                     'email': email.text.trim(),
-                    'rol': rol.text.trim(),
-                    if (areaId.text.isNotEmpty)
-                      'areaId': int.tryParse(areaId.text.trim()),
+                    'rol': selectedRole.name,
+                    'area_id': selectedArea?.id,
                     // Password may be required by the API - set a default or ask user
                     'password': 'changeme123',
                   };
                   context.read<UserListCubit>().createUser(dto);
-                  Navigator.of(context).pop();
+                  Navigator.of(dialogContext).pop();
                 },
                 child: const Text('Crear'),
               ),
@@ -283,11 +319,11 @@ class _UserDataSource extends DataTableSource {
         DataCell(Text(u.area?.nombre ?? '-')),
         DataCell(
           Builder(
-            builder: (context) {
+            builder: (cellContext) {
               final authState = context.read<AuthCubit>().state;
               final show =
                   authState is AuthAuthenticated &&
-                  authState.user.rol == UserRole.admin;
+                  authState.user.rol == UserRole.ADMIN;
               if (!show) return const SizedBox.shrink();
               return Row(
                 children: [
@@ -317,20 +353,19 @@ class _UserDataSource extends DataTableSource {
   @override
   int get selectedRowCount => 0;
 
-  void _showEditDialog(BuildContext context, User u) {
+  void _showEditDialog(BuildContext screenContext, User u) {
     final nombre = TextEditingController(text: u.nombre);
     final apellido = TextEditingController(text: u.apellido);
     final email = TextEditingController(text: u.email);
-    final rol = TextEditingController(
-      text: u.rol.toString().split('.').last.toUpperCase(),
-    );
-    final areaId = TextEditingController(
-      text: u.area != null ? u.area!.id.toString() : '',
-    );
+    // final rol = TextEditingController(
+    //   text: u.rol.toString().split('.').last.toUpperCase(),
+    // );
+    UserRole selectedRole = u.rol;
+    Area? selectedArea = u.area;
     showDialog(
-      context: context,
+      context: screenContext,
       builder:
-          (context) => AlertDialog(
+          (dialogContext) => AlertDialog(
             title: const Text('Editar usuario'),
             content: SingleChildScrollView(
               child: Column(
@@ -368,34 +403,44 @@ class _UserDataSource extends DataTableSource {
                     ),
                   ),
                   const SizedBox(height: 8),
-                  TextField(
-                    controller: rol,
+                  DropdownButtonFormField<UserRole>(
+                    value:
+                        selectedRole, // El valor inicial es el rol del usuario
                     decoration: InputDecoration(
-                      labelText: 'Rol (ADMIN|MESA_PARTES|AREA|AUDITOR)',
+                      labelText: 'Rol',
                       filled: true,
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(8),
                       ),
                     ),
+                    items:
+                        UserRole.values.map((role) {
+                          return DropdownMenuItem(
+                            value: role,
+                            child: Text(
+                              role.toString().split('.').last[0].toUpperCase() +
+                                  role.toString().split('.').last.substring(1),
+                            ),
+                          );
+                        }).toList(),
+                    onChanged: (role) {
+                      if (role != null) {
+                        selectedRole = role; // Actualiza el rol seleccionado
+                      }
+                    },
                   ),
                   const SizedBox(height: 8),
-                  TextField(
-                    controller: areaId,
-                    decoration: InputDecoration(
-                      labelText: 'Area ID (opcional)',
-                      filled: true,
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                    ),
-                    keyboardType: TextInputType.number,
+                  AreaDropdownField(
+                    isOptional: true,
+                    initialValueId: u.area?.id,
+                    onChanged: (a) => selectedArea = a,
                   ),
                 ],
               ),
             ),
             actions: [
               TextButton(
-                onPressed: () => Navigator.of(context).pop(),
+                onPressed: () => Navigator.of(dialogContext).pop(),
                 child: const Text('Cancelar'),
               ),
               ElevatedButton(
@@ -404,12 +449,12 @@ class _UserDataSource extends DataTableSource {
                     'nombre': nombre.text.trim(),
                     'apellido': apellido.text.trim(),
                     'email': email.text.trim(),
-                    'rol': rol.text.trim(),
-                    if (areaId.text.isNotEmpty)
-                      'areaId': int.tryParse(areaId.text.trim()),
+                    // 'rol': rol.text.trim(),
+                    'rol': selectedRole.name,
+                    'area_id': selectedArea?.id.toInt(),
                   };
                   context.read<UserListCubit>().updateUser(u.id, dto);
-                  Navigator.of(context).pop();
+                  Navigator.of(dialogContext).pop();
                 },
                 child: const Text('Guardar'),
               ),
@@ -421,16 +466,16 @@ class _UserDataSource extends DataTableSource {
   Widget _roleChip(UserRole r) {
     Color color;
     switch (r) {
-      case UserRole.admin:
+      case UserRole.ADMIN:
         color = Colors.purple.shade600;
         break;
-      case UserRole.mesaPartes:
+      case UserRole.MESA_PARTES:
         color = Colors.teal.shade600;
         break;
-      case UserRole.area:
+      case UserRole.AREA:
         color = Colors.blue.shade600;
         break;
-      case UserRole.auditor:
+      case UserRole.AUDITOR:
         color = Colors.orange.shade700;
         break;
     }
@@ -444,22 +489,22 @@ class _UserDataSource extends DataTableSource {
     );
   }
 
-  void _confirmDelete(BuildContext context, User u) {
+  void _confirmDelete(BuildContext screenContext, User u) {
     showDialog(
-      context: context,
+      context: screenContext,
       builder:
-          (context) => AlertDialog(
+          (dialogContext) => AlertDialog(
             title: const Text('Eliminar usuario'),
             content: Text('¿Eliminar usuario ${u.nombre} ${u.apellido}?'),
             actions: [
               TextButton(
-                onPressed: () => Navigator.of(context).pop(),
+                onPressed: () => Navigator.of(dialogContext).pop(),
                 child: const Text('Cancelar'),
               ),
               ElevatedButton(
                 onPressed: () {
                   context.read<UserListCubit>().deleteUser(u.id);
-                  Navigator.of(context).pop();
+                  Navigator.of(dialogContext).pop();
                 },
                 child: const Text('Eliminar'),
               ),

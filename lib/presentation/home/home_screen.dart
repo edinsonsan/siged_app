@@ -25,7 +25,7 @@ class _HomeScreenState extends State<HomeScreen> {
     if (authState is AuthAuthenticated) {
       userName = '${authState.user.nombre} ${authState.user.apellido}';
       userRole = authState.user.rol.toString().split('.').last;
-      isAdmin = authState.user.rol == UserRole.admin;
+      isAdmin = authState.user.rol == UserRole.ADMIN;
     }
 
     // determine selected index from current location (dynamic-safe across go_router versions)

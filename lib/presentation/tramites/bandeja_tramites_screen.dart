@@ -90,7 +90,7 @@ class _BandejaViewState extends State<_BandejaView> {
                     // Nuevo Trámite (role-based)
                     Builder(builder: (context) {
                       final authState = context.read<AuthCubit>().state;
-                      final showNuevo = authState is AuthAuthenticated && (authState.user.rol == UserRole.admin || authState.user.rol == UserRole.mesaPartes);
+                      final showNuevo = authState is AuthAuthenticated && (authState.user.rol == UserRole.ADMIN || authState.user.rol == UserRole.MESA_PARTES);
                       if (!showNuevo) return const SizedBox.shrink();
                       final tramiteCubit = context.read<TramiteCubit>();
                       return ElevatedButton.icon(

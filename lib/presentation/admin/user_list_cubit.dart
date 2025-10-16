@@ -44,9 +44,17 @@ class UserListCubit extends Cubit<UserListState> {
     emit(UserListActionInProgress());
     try {
       await repository.deleteUser(id);
+      emit(UserListSuccess(message: 'Usuario eliminado exitosamente.'));
       await loadUsers();
     } catch (e) {
-      emit(UserListError(message: e.toString()));
+      String errorMessage = e.toString();
+      if (e.toString().contains('No se puede eliminar el usuario')) {
+        errorMessage = e.toString(); // Usa el mensaje del backend
+      } else {
+        // Intenta obtener el mensaje si es una excepción estándar
+        errorMessage = 'Error al eliminar: ${e.toString()}';
+      }
+      emit(UserListError(message: errorMessage));
     }
   }
 }

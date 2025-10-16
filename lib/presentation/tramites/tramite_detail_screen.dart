@@ -6,10 +6,12 @@ import 'package:intl/intl.dart';
 import '../auth/auth_cubit.dart';
 import 'package:timeline_tile/timeline_tile.dart';
 import '../../domain/models/user.dart';
+import '../../domain/models/area.dart';
 
 import '../../domain/models/tramite_model.dart';
 import '../../domain/repositories/tramite_repository.dart';
 import 'detail_tramite_cubit.dart';
+import '../../widgets/area_dropdown_field.dart';
 
 class TramiteDetailScreen extends StatefulWidget {
   final TramiteModel? tramite;
@@ -221,7 +223,7 @@ class _TramiteDetailScreenState extends State<TramiteDetailScreen> {
             // Actions bar
             Builder(builder: (context) {
               final authState = context.read<AuthCubit>().state;
-              final canAct = authState is AuthAuthenticated && (authState.user.rol == UserRole.admin || authState.user.rol == UserRole.area);
+              final canAct = authState is AuthAuthenticated && (authState.user.rol == UserRole.ADMIN || authState.user.rol == UserRole.AREA);
               if (!canAct) return const SizedBox.shrink();
               return Row(
                 children: [
@@ -256,31 +258,37 @@ class _TramiteDetailScreenState extends State<TramiteDetailScreen> {
   }
 
   void _showDerivarDialog(BuildContext context, TramiteModel tramite) {
-    final areaController = TextEditingController();
+    Area? selectedArea;
     showDialog(
       context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Derivar trámite'),
-        content: TextField(
-          controller: areaController,
-          decoration: const InputDecoration(labelText: 'ID Área destino'),
-          keyboardType: TextInputType.number,
+      builder: (context) => StatefulBuilder(
+        builder: (context, setState) => AlertDialog(
+          title: const Text('Derivar trámite'),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              AreaDropdownField(
+                isOptional: false,
+                onChanged: (a) => setState(() => selectedArea = a),
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(onPressed: () => Navigator.of(context).pop(), child: const Text('Cancelar')),
+            ElevatedButton(
+              onPressed: () {
+                if (selectedArea != null) {
+                  final toAreaId = selectedArea!.id.toInt();
+                  final authState = context.read<AuthCubit>().state;
+                  final int? userId = authState is AuthAuthenticated ? authState.user.id.toInt() : null;
+                  context.read<DetailTramiteCubit>().derivar(tramite.id.toInt(), toAreaId, userId: userId);
+                  Navigator.of(context).pop();
+                }
+              },
+              child: const Text('Derivar'),
+            )
+          ],
         ),
-        actions: [
-          TextButton(onPressed: () => Navigator.of(context).pop(), child: const Text('Cancelar')),
-          ElevatedButton(
-            onPressed: () {
-              final toAreaId = int.tryParse(areaController.text);
-              if (toAreaId != null) {
-                final authState = context.read<AuthCubit>().state;
-                final int? userId = authState is AuthAuthenticated ? authState.user.id.toInt() : null;
-                context.read<DetailTramiteCubit>().derivar(tramite.id.toInt(), toAreaId, userId: userId);
-                Navigator.of(context).pop();
-              }
-            },
-            child: const Text('Derivar'),
-          )
-        ],
       ),
     );
   }
