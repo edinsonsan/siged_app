@@ -118,7 +118,15 @@ class _BandejaViewState extends State<_BandejaView> {
             if (state is TramiteLoading) return const Center(child: CircularProgressIndicator());
             if (state is TramiteError) return Center(child: Text('Error: ${state.message}'));
             if (state is TramiteLoaded) {
-              final source = _TramiteDataSource(state.list, context);
+              final authState = context.read<AuthCubit>().state;
+              List<TramiteModel> filteredList = state.list;
+              if (authState is AuthAuthenticated) {
+                final user = authState.user;
+                if (user.rol == UserRole.AREA && user.area != null) {
+                  filteredList = state.list.where((t) => t.areaActual?.id == user.area!.id).toList();
+                }
+              }
+              final source = _TramiteDataSource(filteredList, context);
               return FadeInUp(
                 duration: const Duration(milliseconds: 300),
                 child: Padding(

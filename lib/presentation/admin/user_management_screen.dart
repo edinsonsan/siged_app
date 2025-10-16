@@ -193,6 +193,7 @@ class _UserManagementViewState extends State<_UserManagementView> {
   }
 
   void _showCreateDialog(BuildContext screenContext) {
+    final formKey = GlobalKey<FormState>();
     final nombre = TextEditingController();
     final apellido = TextEditingController();
     final email = TextEditingController();
@@ -205,73 +206,84 @@ class _UserManagementViewState extends State<_UserManagementView> {
           (dialogContext) => AlertDialog(
             title: const Text('Crear usuario'),
             content: SingleChildScrollView(
-              child: Column(
-                children: [
-                  TextField(
-                    controller: nombre,
-                    decoration: InputDecoration(
-                      labelText: 'Nombre',
-                      filled: true,
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(8),
+              child: Form(
+                key: formKey,
+                child: Column(
+                  children: [
+                    TextFormField(
+                      controller: nombre,
+                      decoration: InputDecoration(
+                        labelText: 'Nombre',
+                        filled: true,
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(8),
+                        ),
                       ),
+                      validator: (value) => value!.trim().isEmpty ? 'El nombre es obligatorio.' : null,
                     ),
-                  ),
-                  const SizedBox(height: 8),
-                  TextField(
-                    controller: apellido,
-                    decoration: InputDecoration(
-                      labelText: 'Apellido',
-                      filled: true,
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(8),
+                    const SizedBox(height: 8),
+                    TextFormField(
+                      controller: apellido,
+                      decoration: InputDecoration(
+                        labelText: 'Apellido',
+                        filled: true,
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(8),
+                        ),
                       ),
+                      validator: (value) => value!.trim().isEmpty ? 'El apellido es obligatorio.' : null,
                     ),
-                  ),
-                  const SizedBox(height: 8),
-                  TextField(
-                    controller: email,
-                    decoration: InputDecoration(
-                      labelText: 'Email',
-                      filled: true,
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(8),
+                    const SizedBox(height: 8),
+                    TextFormField(
+                      controller: email,
+                      decoration: InputDecoration(
+                        labelText: 'Email',
+                        filled: true,
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(8),
+                        ),
                       ),
+                      keyboardType: TextInputType.emailAddress,
+                      validator: (value) {
+                        if (value!.trim().isEmpty) return 'El email es obligatorio.';
+                        if (!value.contains('@') || !value.contains('.')) return 'Formato de email inválido.';
+                        return null;
+                      },
                     ),
-                  ),
-                  const SizedBox(height: 8),
-                  DropdownButtonFormField<UserRole>(
-                    value: selectedRole, // El valor inicial es AREA
-                    decoration: InputDecoration(
-                      labelText: 'Rol',
-                      filled: true,
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(8),
+                    const SizedBox(height: 8),
+                    DropdownButtonFormField<UserRole>(
+                      value: selectedRole, // El valor inicial es AREA
+                      decoration: InputDecoration(
+                        labelText: 'Rol',
+                        filled: true,
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(8),
+                        ),
                       ),
+                      items:
+                          UserRole.values.map((role) {
+                            return DropdownMenuItem(
+                              value: role,
+                              // Mostrar el rol con la primera letra en mayúscula (ej: Admin)
+                              child: Text(
+                                role.toString().split('.').last[0].toUpperCase() +
+                                    role.toString().split('.').last.substring(1),
+                              ),
+                            );
+                          }).toList(),
+                      onChanged: (role) {
+                        if (role != null) {
+                          selectedRole = role; // Actualiza el rol seleccionado
+                        }
+                      },
                     ),
-                    items:
-                        UserRole.values.map((role) {
-                          return DropdownMenuItem(
-                            value: role,
-                            // Mostrar el rol con la primera letra en mayúscula (ej: Admin)
-                            child: Text(
-                              role.toString().split('.').last[0].toUpperCase() +
-                                  role.toString().split('.').last.substring(1),
-                            ),
-                          );
-                        }).toList(),
-                    onChanged: (role) {
-                      if (role != null) {
-                        selectedRole = role; // Actualiza el rol seleccionado
-                      }
-                    },
-                  ),
-                  const SizedBox(height: 8),
-                  AreaDropdownField(
-                    isOptional: true,
-                    onChanged: (a) => selectedArea = a,
-                  ),
-                ],
+                    const SizedBox(height: 8),
+                    AreaDropdownField(
+                      isOptional: true,
+                      onChanged: (a) => selectedArea = a,
+                    ),
+                  ],
+                ),
               ),
             ),
             actions: [
@@ -281,17 +293,54 @@ class _UserManagementViewState extends State<_UserManagementView> {
               ),
               ElevatedButton(
                 onPressed: () {
+                  // 1. Validar el formulario
+                  if (!formKey.currentState!.validate()) return;
+                  
+                  // --- Lógica de Generación de Contraseña Temporal ---
+                  final rawName = nombre.text.trim().toLowerCase();
+                  final rawLastName = apellido.text.trim().toLowerCase();
+
+                  // Normalizar y limpiar (eliminar espacios y tildes si es posible, aunque Dart no tiene una función nativa simple)
+                  // Para simplificar, solo quitamos espacios y dejamos minúsculas.
+                  final namePart = rawName.replaceAll(' ', '');
+                  final lastNamePart = rawLastName.replaceAll(' ', '');
+
+                  // Generar partes para la contraseña
+                  final firstInitial = namePart.isNotEmpty ? namePart[0] : '';
+                  // Usar las primeras 4 letras del apellido (o menos si es corto)
+                  final lastNamePrefix = lastNamePart.length >= 4 ? lastNamePart.substring(0, 4) : lastNamePart;
+                  final currentYear = DateTime.now().year.toString();
+
+                  // Contraseña temporal: InicialNombre + PrefijoApellido + Año. Ej: jgonz2025
+                  final tempPassword = '$firstInitial$lastNamePrefix$currentYear';
+                  // -----------------------------------------------------------------
+
                   final dto = {
                     'nombre': nombre.text.trim(),
                     'apellido': apellido.text.trim(),
                     'email': email.text.trim(),
                     'rol': selectedRole.name,
                     'area_id': selectedArea?.id,
-                    // Password may be required by the API - set a default or ask user
-                    'password': 'changeme123',
+                    
+                    'password': tempPassword,
+                    
                   };
-                  context.read<UserListCubit>().createUser(dto);
-                  Navigator.of(dialogContext).pop();
+                  
+                  // Cerrar el diálogo ANTES de iniciar la acción del Cubit (buena práctica)
+                  Navigator.of(dialogContext).pop(); 
+                  
+                  // Llamar a la acción del Cubit
+                  screenContext.read<UserListCubit>().createUser(dto);
+                  
+                  // Opcionalmente, mostrar un SnackBar aquí con la contraseña temporal
+                  // para que el administrador la vea antes de que se envíe el email al usuario.
+                  ScaffoldMessenger.of(screenContext).showSnackBar(
+                    SnackBar(
+                      content: Text('Usuario creado. Contraseña temporal: $tempPassword.'),
+                      duration: const Duration(seconds: 8),
+                      backgroundColor: Colors.orange,
+                    ),
+                  );
                 },
                 child: const Text('Crear'),
               ),
