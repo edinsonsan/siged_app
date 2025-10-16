@@ -67,7 +67,7 @@ class _TramiteDetailScreenState extends State<TramiteDetailScreen> {
     final tramite = _tramite!;
 
     return BlocProvider(
-      create: (context) => DetailTramiteCubit(context.read<TramiteRepository>())..loadTramite(tramite),
+      create: (context) => DetailTramiteCubit(context.read<TramiteRepository>())..loadTramiteById(tramite.id),
       child: Scaffold(
         appBar: AppBar(
           title: Text('Trámite ${tramite.cut}'),
@@ -79,8 +79,10 @@ class _TramiteDetailScreenState extends State<TramiteDetailScreen> {
               if (state is DetailTramiteError) {
                 ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(state.message)));
               }
-              if (state is DetailTramiteSuccess) {
-                ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(state.message))); 
+              if (state is DetailTramiteLoaded && state.successMessage != null) {
+                ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(state.successMessage!)));
+                // clear after showing to avoid duplicate snackbars on rebuild
+                context.read<DetailTramiteCubit>().clearSuccessMessage();
               }
             },
             builder: (context, state) {
@@ -257,7 +259,7 @@ class _TramiteDetailScreenState extends State<TramiteDetailScreen> {
     );
   }
 
-  void _showDerivarDialog(BuildContext context, TramiteModel tramite) {
+  void _showDerivarDialog(BuildContext dialogContext, TramiteModel tramite) {
     Area? selectedArea;
     showDialog(
       context: context,
@@ -279,10 +281,10 @@ class _TramiteDetailScreenState extends State<TramiteDetailScreen> {
               onPressed: () {
                 if (selectedArea != null) {
                   final toAreaId = selectedArea!.id.toInt();
-                  final authState = context.read<AuthCubit>().state;
+                  final authState = dialogContext.read<AuthCubit>().state;
                   final int? userId = authState is AuthAuthenticated ? authState.user.id.toInt() : null;
-                  context.read<DetailTramiteCubit>().derivar(tramite.id.toInt(), toAreaId, userId: userId);
                   Navigator.of(context).pop();
+                  dialogContext.read<DetailTramiteCubit>().derivar(tramite.id.toInt(), toAreaId, userId: userId);
                 }
               },
               child: const Text('Derivar'),
@@ -293,7 +295,7 @@ class _TramiteDetailScreenState extends State<TramiteDetailScreen> {
     );
   }
 
-  void _showObservarDialog(BuildContext context, TramiteModel tramite) {
+  void _showObservarDialog(BuildContext dialogContext, TramiteModel tramite) {
     final commentController = TextEditingController();
     showDialog(
       context: context,
@@ -310,13 +312,13 @@ class _TramiteDetailScreenState extends State<TramiteDetailScreen> {
             onPressed: () {
               final comment = commentController.text.trim();
               if (comment.isNotEmpty) {
-                final authState = context.read<AuthCubit>().state;
+                final authState = dialogContext.read<AuthCubit>().state;
                 if (authState is! AuthAuthenticated) {
                   ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Debe iniciar sesión para observar')));
                   return;
                 }
                 final int userId = authState.user.id.toInt();
-                context.read<DetailTramiteCubit>().observar(tramite.id.toInt(), comment, userId);
+                dialogContext.read<DetailTramiteCubit>().observar(tramite.id.toInt(), comment, userId);
                 Navigator.of(context).pop();
               }
             },
@@ -327,7 +329,7 @@ class _TramiteDetailScreenState extends State<TramiteDetailScreen> {
     );
   }
 
-  void _confirmFinalizar(BuildContext context, TramiteModel tramite) {
+  void _confirmFinalizar(BuildContext dialogContext, TramiteModel tramite) {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
@@ -337,13 +339,13 @@ class _TramiteDetailScreenState extends State<TramiteDetailScreen> {
           TextButton(onPressed: () => Navigator.of(context).pop(), child: const Text('Cancelar')),
           ElevatedButton(
             onPressed: () {
-              final authState = context.read<AuthCubit>().state;
+              final authState = dialogContext.read<AuthCubit>().state;
               if (authState is! AuthAuthenticated) {
                 ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Debe iniciar sesión para finalizar')));
                 return;
               }
               final int userId = authState.user.id.toInt();
-              context.read<DetailTramiteCubit>().finalizar(tramite.id.toInt(), userId);
+              dialogContext.read<DetailTramiteCubit>().finalizar(tramite.id.toInt(), userId);
               Navigator.of(context).pop();
             },
             child: const Text('Finalizar'),

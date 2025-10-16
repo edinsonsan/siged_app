@@ -11,15 +11,22 @@ class DetailTramiteCubit extends Cubit<DetailTramiteState> {
   final TramiteRepository repository;
 
   DetailTramiteCubit(this.repository) : super(DetailTramiteInitial());
-
-  Future<void> loadTramite(TramiteModel tramite) async {
+  Future<void> loadTramiteById(num id) async {
     emit(DetailTramiteLoading());
     try {
-      // In many APIs, a full detalle endpoint exists; for now we use the provided tramite and fetch historial.
-      final historial = await repository.getHistorial(tramite.id);
+      final tramite = await repository.getTramiteById(id);
+      final historial = await repository.getHistorial(id);
       emit(DetailTramiteLoaded(tramite: tramite, historial: historial));
     } catch (e) {
       emit(DetailTramiteError(message: e.toString()));
+    }
+  }
+
+  /// Clear any transient success message on the loaded state to avoid repeat snackbars.
+  void clearSuccessMessage() {
+    final current = state;
+    if (current is DetailTramiteLoaded && current.successMessage != null) {
+      emit(current.copyWith(successMessage: null));
     }
   }
 
@@ -27,13 +34,12 @@ class DetailTramiteCubit extends Cubit<DetailTramiteState> {
     emit(DetailTramiteActionInProgress());
     try {
       await repository.derivarTramite(id, toAreaId, userId: userId);
-      // reload entire tramite and historial if we have the current tramite
+      // reload entire tramite and historial from server by id to ensure fresh data
+      await loadTramiteById(id);
+      // if loaded, attach a transient success message so the UI can show a snackbar
       final current = state;
       if (current is DetailTramiteLoaded) {
-        await loadTramite(current.tramite);
-        emit(DetailTramiteSuccess(message: 'Trámite derivado'));
-      } else {
-        emit(DetailTramiteSuccess(message: 'Trámite derivado'));
+        emit(current.copyWith(successMessage: 'Trámite derivado'));
       }
     } catch (e) {
       emit(DetailTramiteError(message: e.toString()));
@@ -44,12 +50,10 @@ class DetailTramiteCubit extends Cubit<DetailTramiteState> {
     emit(DetailTramiteActionInProgress());
     try {
       await repository.finalizeTramite(id, userId: userId);
+      await loadTramiteById(id);
       final current = state;
       if (current is DetailTramiteLoaded) {
-        await loadTramite(current.tramite);
-        emit(DetailTramiteSuccess(message: 'Trámite finalizado'));
-      } else {
-        emit(DetailTramiteSuccess(message: 'Trámite finalizado'));
+        emit(current.copyWith(successMessage: 'Trámite finalizado'));
       }
     } catch (e) {
       emit(DetailTramiteError(message: e.toString()));
@@ -60,12 +64,10 @@ class DetailTramiteCubit extends Cubit<DetailTramiteState> {
     emit(DetailTramiteActionInProgress());
     try {
       await repository.observeTramite(id, comment, userId: userId);
+      await loadTramiteById(id);
       final current = state;
       if (current is DetailTramiteLoaded) {
-        await loadTramite(current.tramite);
-        emit(DetailTramiteSuccess(message: 'Observación añadida'));
-      } else {
-        emit(DetailTramiteSuccess(message: 'Observación añadida'));
+        emit(current.copyWith(successMessage: 'Observación añadida'));
       }
     } catch (e) {
       emit(DetailTramiteError(message: e.toString()));
